@@ -110,10 +110,10 @@ export default function DashboardPage() {
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-gray-700 rounded-lg text-sm transition-all group disabled:opacity-50"
           >
-            <svg className={`w-4 h-4 transition-transform duration-500 ${loading ? \'animate-spin\' : \'group-hover:rotate-180\'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-4 h-4 transition-transform duration-500 ${loading ? 'animate-spin' : 'group-hover:rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span>{loading ? \'Loading...\' : \'Refresh Status\'}</span>
+            <span>{loading ? 'Loading...' : 'Refresh Status'}</span>
           </button>
         </div>
 
@@ -132,7 +132,7 @@ export default function DashboardPage() {
               {agents.length === 0 ? (
                 <tr className="hover:bg-white/5 transition-colors">
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    {loading ? \'Loading agents...\' : \'No agents connected yet\'}
+                    {loading ? 'Loading agents...' : 'No agents connected yet'}
                   </td>
                 </tr>
               ) : (
@@ -145,7 +145,7 @@ export default function DashboardPage() {
                         {agent.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-400">{agent.current_job || \'—\'}</td>
+                    <td className="px-6 py-4 text-gray-400">{agent.current_job || '—'}</td>
                     <td className="px-6 py-4 text-gray-400 font-mono text-xs">{formatTime(agent.last_heartbeat)}</td>
                     <td className="px-6 py-4 text-right">
                       <button className="text-gray-400 hover:text-gray-300 px-3 py-1 rounded hover:bg-gray-500/10 transition-colors text-xs font-medium">
@@ -182,7 +182,7 @@ export default function DashboardPage() {
           <div className="p-6 space-y-4">
             {connections.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                {loading ? \'Loading connections...\' : \'No API connections configured\'}
+                {loading ? 'Loading connections...' : 'No API connections configured'}
               </div>
             ) : (
               connections.map(conn => {
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 ${conn.status === \'active\' ? \'bg-green-500\' : \'bg-gray-500\'} rounded-full`}></span>
+                        <span className={`w-2 h-2 ${conn.status === 'active' ? 'bg-green-500' : 'bg-gray-500'} rounded-full`}></span>
                         <span className="text-xs text-gray-400">{conn.status}</span>
                       </div>
                     </div>
@@ -217,9 +217,9 @@ export default function DashboardPage() {
                       <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden border border-gray-800">
                         <div 
                           className={`h-full transition-all ${
-                            usage_percent > 80 ? \'bg-red-500\' : 
-                            usage_percent > 50 ? \'bg-yellow-500\' : 
-                            \'bg-green-500\'
+                            usage_percent > 80 ? 'bg-red-500' : 
+                            usage_percent > 50 ? 'bg-yellow-500' : 
+                            'bg-green-500'
                           }`}
                           style={{ width: `${Math.min(usage_percent, 100)}%` }}
                         />
@@ -263,11 +263,11 @@ export default function DashboardPage() {
               disabled={loading}
               className="w-full py-3 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 disabled:opacity-50 text-gray-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
-              <svg className={`w-4 h-4 ${loading ? \'animate-spin\' : \'\'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {loading ? \'Checking...\' : \'Run Check Now\'}
+              {loading ? 'Checking...' : 'Run Check Now'}
             </button>
             <p className="text-xs text-gray-600 text-center mt-2">Updates all statuses</p>
           </div>
