@@ -26,7 +26,7 @@ export async function GET() {
       {
         id: 'cami-daily',
         name: 'Cami Daily Agent',
-        icon: '📊',
+        icon: '📅',
         description: 'Daily calendar event monitoring and alerts',
         status: 'idle',
         current_job: null,
@@ -59,7 +59,7 @@ export async function GET() {
       {
         id: 'staff-sergeant',
         name: 'Staff Sergeant Agent',
-        icon: '👨‍💼',
+        icon: '🎖️',
         description: 'Personal performance coaching and feedback',
         status: 'idle',
         current_job: null,
@@ -70,7 +70,7 @@ export async function GET() {
       {
         id: 'sergeant-first-class',
         name: 'Sergeant First Class',
-        icon: '📈',
+        icon: '🎖️',
         description: 'Executive performance reports and analytics',
         status: 'scheduled',
         current_job: 'Preparing weekly executive report',
