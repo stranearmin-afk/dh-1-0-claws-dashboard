@@ -84,7 +84,7 @@ export default function Dashboard() {
               </div>
             </div>
             <h1 className="text-2xl font-bold text-white text-center mb-2">Agent Command Center</h1>
-            <p className="text-sm text-gray-500 text-center mb-6">v1.0 • Secure Access Required</p>
+            <p className="text-sm text-gray-500 text-center mb-6">v1.0 • Secure Access Required [UPDATED]</p>
             
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
@@ -105,7 +105,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Main Dashboard */}
+      {/* Main Dashboard - only shown after login */}
       {isLoggedIn && (
         <>
           {/* Header */}
