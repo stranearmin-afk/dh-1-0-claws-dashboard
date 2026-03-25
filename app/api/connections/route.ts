@@ -3,12 +3,21 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const { data: connections, error: connError } = await supabase.from('connections').select('*');
+    // Fetch connections
+    const { data: connections, error: connError } = await supabase
+      .from('connections')
+      .select('*');
+
     if (connError) throw connError;
 
-    const { data: logs, error: logsError } = await supabase.from('usage_logs').select('connection_id, cost_usd');
+    // Fetch usage logs for cost calculation
+    const { data: logs, error: logsError } = await supabase
+      .from('usage_logs')
+      .select('connection_id, cost_usd');
+
     if (logsError) throw logsError;
 
+    // Calculate usage per connection
     const usageByConnection: Record<string, number> = {};
     logs?.forEach((log) => {
       if (log.connection_id) {
@@ -16,6 +25,7 @@ export async function GET() {
       }
     });
 
+    // Enrich connections with calculated balance
     const enrichedConnections = (connections || []).map((conn) => ({
       ...conn,
       estimated_usage: usageByConnection[conn.id] || 0,
