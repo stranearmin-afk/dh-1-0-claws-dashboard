@@ -55,6 +55,15 @@ export async function GET() {
         description: 'Claude AI models',
         accounts: ['claude-opus-4-6', 'claude-sonnet-4-5'],
         provider: 'Anthropic'
+      },
+      {
+        id: 'instagram',
+        name: 'Instagram',
+        icon: '📸',
+        status: 'active',
+        description: 'Social media & DMs',
+        accounts: ['@danielheinz8 (114 followers)'],
+        provider: 'Meta'
       }
     ];
 
@@ -62,7 +71,7 @@ export async function GET() {
       connections,
       total: connections.length,
       active_count: connections.filter(c => c.status === 'active').length,
-      providers: ['Google', 'Telegram', 'Anthropic'],
+      providers: ['Google', 'Telegram', 'Anthropic', 'Meta'],
       last_updated: new Date().toISOString()
     }, { status: 200 });
   } catch (error) {
