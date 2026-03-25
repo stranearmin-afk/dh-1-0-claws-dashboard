@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Command Center v1.0</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -40,11 +39,12 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    .mono { font-family: 'JetBrains Mono', monospace; }
-
-    .token-bar {
-      background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
     }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
     html, body {
       height: 100%;
@@ -57,7 +57,6 @@
 
     button:hover {
       opacity: 0.9;
-      transform: scale(1.02);
     }
 
     button:active {
@@ -70,11 +69,7 @@
     }
 
     .hidden { display: none; }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .5; }
-    }
+    .loading { opacity: 0.6; }
   </style>
 </head>
 <body class="bg-black text-gray-300">
@@ -82,6 +77,69 @@
 
   <script>
     let isLoggedIn = false;
+    let agents = [];
+    let cronJobs = [];
+
+    async function fetchData() {
+      try {
+        const [agentsRes, cronRes] = await Promise.all([
+          fetch('/api/agents-real'),
+          fetch('/api/cron-jobs')
+        ]);
+
+        if (agentsRes.ok) {
+          const data = await agentsRes.json();
+          agents = data.agents || [];
+        }
+        if (cronRes.ok) {
+          const data = await cronRes.json();
+          cronJobs = data.cron_jobs || [];
+        }
+
+        if (isLoggedIn) {
+          showDashboard();
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    }
+
+    function formatTime(isoString) {
+      const date = new Date(isoString);
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    }
+
+    function formatRelativeTime(isoString) {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    }
+
+    function getStatusColor(status) {
+      switch(status) {
+        case 'running': return { bg: 'rgba(34, 197, 94, 0.1)', text: '#4ade80', dot: '#22c55e' };
+        case 'scheduled': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#60a5fa', dot: '#3b82f6' };
+        case 'idle': return { bg: 'rgba(107, 114, 128, 0.1)', text: '#9ca3af', dot: '#6b7280' };
+        case 'error': return { bg: 'rgba(239, 68, 68, 0.1)', text: '#f87171', dot: '#ef4444' };
+        default: return { bg: 'rgba(107, 114, 128, 0.1)', text: '#9ca3af', dot: '#6b7280' };
+      }
+    }
 
     function showLogin() {
       const app = document.getElementById('app');
@@ -191,6 +249,64 @@
 
     function showDashboard() {
       const app = document.getElementById('app');
+      const agentRows = agents.map(agent => {
+        const colors = getStatusColor(agent.status);
+        return `
+          <tr style="border-bottom: 1px solid #1f2937; cursor: pointer;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)';" onmouseout="this.style.backgroundColor='transparent';">
+            <td style="padding: 1rem 1.5rem; color: white; font-weight: 500;">${agent.name}</td>
+            <td style="padding: 1rem 1.5rem;">
+              <span style="
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                background-color: ${colors.bg};
+                color: ${colors.text};
+                border: 1px solid ${colors.bg};
+                font-size: 0.75rem;
+                font-weight: 500;
+              ">
+                <span style="width: 1.5px; height: 1.5px; background-color: ${colors.dot}; border-radius: 9999px; ${agent.status === 'running' ? 'animation: pulse-ring 2s infinite;' : ''}"></span>
+                ${agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
+              </span>
+            </td>
+            <td style="padding: 1rem 1.5rem; color: #9ca3af;">${agent.current_job || '—'}</td>
+            <td style="padding: 1rem 1.5rem; color: #9ca3af; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;">${formatRelativeTime(agent.last_heartbeat)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const cronRows = cronJobs.map(job => {
+        const lastExec = job.execution_history[0];
+        return `
+          <tr style="border-bottom: 1px solid #1f2937;">
+            <td style="padding: 1rem 1.5rem; color: white; font-weight: 500;">${job.name}</td>
+            <td style="padding: 1rem 1.5rem; color: #9ca3af; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;">
+              <span style="display: inline-block; padding: 0.25rem 0.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 0.25rem; color: #60a5fa;">${job.schedule}</span>
+            </td>
+            <td style="padding: 1rem 1.5rem; color: #9ca3af; font-size: 0.875rem;">${formatTime(job.next_execution)}</td>
+            <td style="padding: 1rem 1.5rem; color: #9ca3af; font-size: 0.875rem;">${lastExec ? formatTime(lastExec.executed_at) : '—'}</td>
+            <td style="padding: 1rem 1.5rem;">
+              <span style="
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                background-color: ${lastExec?.status === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'};
+                color: ${lastExec?.status === 'success' ? '#4ade80' : '#f87171'};
+                border: 1px solid ${lastExec?.status === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'};
+                font-size: 0.75rem;
+              ">
+                ${lastExec?.status === 'success' ? '✓' : '✗'} ${lastExec?.status || 'pending'}
+              </span>
+            </td>
+            <td style="padding: 1rem 1.5rem; color: #9ca3af; font-size: 0.875rem; text-align: right;">${lastExec?.duration_ms ? (lastExec.duration_ms / 1000).toFixed(1) + 's' : '—'}</td>
+          </tr>
+        `;
+      }).join('');
+
       app.innerHTML = `
         <div style="
           color: #d1d5db;
@@ -202,7 +318,7 @@
           font-family: 'Inter', sans-serif;
         ">
           <header class="glass-panel" style="border-bottom: 1px solid #1f2937; position: sticky; top: 0; z-index: 40;">
-            <div style="max-width: 80rem; margin-left: auto; margin-right: auto; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div style="max-width: 1200px; margin-left: auto; margin-right: auto; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 2.5rem; height: 2.5rem; background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.2);">
                   <svg class="w-5 h-5" style="color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
@@ -220,15 +336,16 @@
               </button>
             </div>
           </header>
-          <main style="flex: 1; max-width: 80rem; margin: 0 auto; padding: 2rem 1.5rem; width: 100%;">
-            <section class="glass-panel" style="border-radius: 0.75rem; overflow: hidden;">
+          <main style="flex: 1; max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%;">
+            
+            <section class="glass-panel" style="border-radius: 0.75rem; overflow: hidden; margin-bottom: 2rem;">
               <div style="padding: 1rem 1.5rem; border-bottom: 1px solid #1f2937; display: flex; align-items: center; justify-content: space-between; background-color: rgba(255, 255, 255, 0.05);">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                  <svg class="w-5 h-5" style="color: #60a5fa;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-                  <h2 style="font-size: 1.125rem; font-weight: 600; color: white;">Chrome Instances</h2>
-                  <span style="padding: 0.25rem 0.5rem; background-color: rgba(59, 130, 246, 0.1); color: #60a5fa; font-size: 0.75rem; border-radius: 9999px; border: 1px solid rgba(59, 130, 246, 0.2);">1 Active</span>
+                  <svg class="w-5 h-5" style="color: #60a5fa;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  <h2 style="font-size: 1.125rem; font-weight: 600; color: white;">Agents & Status</h2>
+                  <span style="padding: 0.25rem 0.5rem; background-color: rgba(59, 130, 246, 0.1); color: #60a5fa; font-size: 0.75rem; border-radius: 9999px; border: 1px solid rgba(59, 130, 246, 0.2);">${agents.length} Total</span>
                 </div>
-                <button style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: rgba(255, 255, 255, 0.05); border: 1px solid #374151; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; color: white; transition: all 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.1)';" onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.05)';">
+                <button onclick="fetchData()" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: rgba(255, 255, 255, 0.05); border: 1px solid #374151; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; color: white; transition: all 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.1)';" onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.05)';">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                   <span>Refresh</span>
                 </button>
@@ -237,46 +354,43 @@
                 <table style="width: 100%; text-align: left; border-collapse: collapse;">
                   <thead>
                     <tr style="font-size: 0.75rem; color: #6b7280; border-bottom: 1px solid #1f2937; background-color: rgba(0, 0, 0, 0.2);">
-                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Agent</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Agent Name</th>
                       <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
                       <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Current Job</th>
-                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Last Seen</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Last Heartbeat</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr style="border-bottom: 1px solid #1f2937; cursor: pointer;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)';" onmouseout="this.style.backgroundColor='transparent';">
-                      <td style="padding: 1rem 1.5rem; color: white; font-weight: 500;">scraper-main</td>
-                      <td style="padding: 1rem 1.5rem;"><span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); font-size: 0.75rem;"><span class="status-pulse" style="width: 1.5px; height: 1.5px; background-color: #4ade80; border-radius: 9999px;"></span> Running</span></td>
-                      <td style="padding: 1rem 1.5rem; color: #9ca3af;">LinkedIn Profile Scrape • 45/100</td>
-                      <td style="padding: 1rem 1.5rem; color: #9ca3af; font-family: 'JetBrains Mono', monospace;">2m ago</td>
-                    </tr>
+                    ${agentRows || '<tr><td style="padding: 2rem 1.5rem; color: #6b7280; text-align: center;">No agents found</td></tr>'}
                   </tbody>
                 </table>
               </div>
             </section>
-            <section class="glass-panel" style="border-radius: 0.75rem; margin-top: 1.5rem; padding: 1.5rem;">
-              <h2 style="font-size: 1.125rem; font-weight: 600; color: white; margin-bottom: 1rem;">API Balances & Connections</h2>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-                <div class="glass-panel" style="padding: 1rem; border-radius: 0.5rem;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                      <div style="width: 2.5rem; height: 2.5rem; background-color: rgba(251, 146, 60, 0.1); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(251, 146, 60, 0.2);"><span style="color: #fb923c; font-weight: bold; font-size: 0.75rem;">Cl</span></div>
-                      <div><h3 style="color: white; font-weight: 500;">Anthropic Claude</h3><p style="font-size: 0.75rem; color: #6b7280;">claude-3-5-sonnet</p></div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 0.5rem; height: 0.5rem; background-color: #22c55e; border-radius: 9999px;"></span><span style="font-size: 0.75rem; color: #4ade80;">Active</span></div>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.5rem;"><span style="color: #6b7280;">Balance</span><span style="color: white; font-family: 'JetBrains Mono', monospace;">$12.45 / $20.00</span></div>
-                  <div style="height: 0.5rem; background-color: #1f2937; border-radius: 9999px; overflow: hidden;"><div style="height: 100%; background: linear-gradient(90deg, #f97316 0%, #eab308 100%); width: 62%;"></div></div>
+
+            <section class="glass-panel" style="border-radius: 0.75rem; overflow: hidden;">
+              <div style="padding: 1rem 1.5rem; border-bottom: 1px solid #1f2937; display: flex; align-items: center; justify-content: space-between; background-color: rgba(255, 255, 255, 0.05);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <svg class="w-5 h-5" style="color: #a78bfa;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <h2 style="font-size: 1.125rem; font-weight: 600; color: white;">Cron Jobs & Executions</h2>
+                  <span style="padding: 0.25rem 0.5rem; background-color: rgba(168, 85, 247, 0.1); color: #d8b4fe; font-size: 0.75rem; border-radius: 9999px; border: 1px solid rgba(168, 85, 247, 0.2);">${cronJobs.length} Scheduled</span>
                 </div>
-                <div class="glass-panel" style="padding: 1rem; border-radius: 0.5rem;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                      <div style="width: 2.5rem; height: 2.5rem; background-color: rgba(16, 185, 129, 0.1); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(16, 185, 129, 0.2);"><svg class="w-5 h-5" style="color: #10b981;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
-                      <div><h3 style="color: white; font-weight: 500;">OpenAI</h3><p style="font-size: 0.75rem; color: #6b7280;">GPT-4 Turbo</p></div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;"><span style="width: 0.5rem; height: 0.5rem; background-color: #eab308; border-radius: 9999px; animation: pulse 2s infinite;"></span><span style="font-size: 0.75rem; color: #facc15;">Check</span></div>
-                  </div>
-                </div>
+              </div>
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                  <thead>
+                    <tr style="font-size: 0.75rem; color: #6b7280; border-bottom: 1px solid #1f2937; background-color: rgba(0, 0, 0, 0.2);">
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Job Name</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Schedule</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Next Execution</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Last Executed</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+                      <th style="padding: 0.75rem 1.5rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${cronRows || '<tr><td style="padding: 2rem 1.5rem; color: #6b7280; text-align: center;">No cron jobs found</td></tr>'}
+                  </tbody>
+                </table>
               </div>
             </section>
           </main>
@@ -287,10 +401,11 @@
     function handleLogin(e) {
       e.preventDefault();
       const password = document.getElementById('passwordInput').value;
+      
       if (password === 'admin') {
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
-        showDashboard();
+        fetchData();
       } else {
         document.getElementById('loginError').textContent = 'Invalid credentials';
         document.getElementById('loginError').style.display = 'block';
@@ -304,10 +419,17 @@
     }
 
     if (localStorage.getItem('dashboardLoggedIn')) {
-      showDashboard();
+      isLoggedIn = true;
+      fetchData();
     } else {
       showLogin();
     }
+
+    setInterval(() => {
+      if (isLoggedIn) {
+        fetchData();
+      }
+    }, 30000);
   </script>
 </body>
 </html>
