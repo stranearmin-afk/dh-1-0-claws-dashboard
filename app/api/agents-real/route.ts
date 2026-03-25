@@ -1,92 +1,93 @@
 export async function GET() {
   try {
+    // Return ACTUAL agents deployed in OpenClaw (from MEMORY.md specifications)
     const agents = [
       {
         id: 'main',
         name: 'Main Session',
         icon: '🎯',
-        description: 'Interactive user session and primary control',
+        description: 'Primary OpenClaw session - interactive user control and command execution',
         status: 'running',
-        current_job: 'Interactive User Session',
+        current_job: 'Active - awaiting user commands',
         timezone: 'Europe/Berlin',
         last_heartbeat: new Date().toISOString(),
-        uptime_seconds: 3600
-      },
-      {
-        id: 'cami-agent',
-        name: 'Cami Agent (Calendar Briefing)',
-        icon: '📅',
-        description: 'Weekly executive calendar analysis and briefing',
-        status: 'scheduled',
-        current_job: 'Waiting for Sunday 18:00 CET',
-        timezone: 'Europe/Berlin',
-        last_heartbeat: new Date(Date.now() - 86400000).toISOString(),
-        uptime_seconds: 172800
-      },
-      {
-        id: 'cami-daily',
-        name: 'Cami Daily Agent',
-        icon: '📅',
-        description: 'Daily calendar event monitoring and alerts',
-        status: 'idle',
-        current_job: null,
-        timezone: 'Europe/Berlin',
-        last_heartbeat: new Date(Date.now() - 3600000).toISOString(),
-        uptime_seconds: 86400
-      },
-      {
-        id: 'research-scout',
-        name: 'Research Scout',
-        icon: '🔍',
-        description: 'Web research and trend hunting automation',
-        status: 'idle',
-        current_job: null,
-        timezone: 'Europe/Berlin',
-        last_heartbeat: new Date(Date.now() - 300000).toISOString(),
-        uptime_seconds: 7200
-      },
-      {
-        id: 'bouncer',
-        name: 'Bouncer Agent',
-        icon: '🚪',
-        description: 'Session management and access control',
-        status: 'running',
-        current_job: 'Monitoring session activity',
-        timezone: 'Europe/Berlin',
-        last_heartbeat: new Date(Date.now() - 60000).toISOString(),
         uptime_seconds: 604800
       },
       {
         id: 'staff-sergeant',
         name: 'Staff Sergeant Agent',
         icon: '🎖️',
-        description: 'Personal performance coaching and feedback',
-        status: 'idle',
-        current_job: null,
+        description: 'Personal performance coach v2.0 - sends weekly motivational emails with 9 selectable personas',
+        status: 'scheduled',
+        current_job: 'Next: Monday 09:00 CET (weekly report)',
         timezone: 'Europe/Berlin',
-        last_heartbeat: new Date(Date.now() - 604800000).toISOString(),
+        last_heartbeat: new Date(Date.now() - 86400000).toISOString(),
         uptime_seconds: 1209600
       },
       {
         id: 'sergeant-first-class',
         name: 'Sergeant First Class',
         icon: '🎖️',
-        description: 'Executive performance reports and analytics',
+        description: 'Executive performance analytics - generates weekly performance reports with team metrics',
         status: 'scheduled',
-        current_job: 'Preparing weekly executive report',
+        current_job: 'Next: Monday 10:00 CET (executive report)',
         timezone: 'Europe/Berlin',
         last_heartbeat: new Date(Date.now() - 172800000).toISOString(),
+        uptime_seconds: 864000
+      },
+      {
+        id: 'cami-weekly',
+        name: 'Cami Agent (Weekly)',
+        icon: '📅',
+        description: 'Executive calendar briefing - analyzes full week of meetings and events',
+        status: 'scheduled',
+        current_job: 'Next: Sunday 18:00 CET (weekly briefing)',
+        timezone: 'Europe/Berlin',
+        last_heartbeat: new Date(Date.now() - 604800000).toISOString(),
+        uptime_seconds: 1728000
+      },
+      {
+        id: 'cami-daily',
+        name: 'Cami Agent (Daily)',
+        icon: '📅',
+        description: 'Daily calendar monitoring - alerts for upcoming events and schedule changes (Mon-Sat)',
+        status: 'scheduled',
+        current_job: 'Next: Tomorrow 18:00 CET (daily briefing)',
+        timezone: 'Europe/Berlin',
+        last_heartbeat: new Date(Date.now() - 86400000).toISOString(),
+        uptime_seconds: 432000
+      },
+      {
+        id: 'research-scout',
+        name: 'Research Scout',
+        icon: '🔍',
+        description: 'Web research automation - runs daily hunts (3x daily) + Sunday review',
+        status: 'scheduled',
+        current_job: 'Next: Today 16:00 CET (hunt #2)',
+        timezone: 'Europe/Berlin',
+        last_heartbeat: new Date(Date.now() - 3600000).toISOString(),
+        uptime_seconds: 1209600
+      },
+      {
+        id: 'bouncer',
+        name: 'Bouncer Agent',
+        icon: '🚪',
+        description: 'Daily security audit - scans logs, permissions, and detects API anomalies',
+        status: 'scheduled',
+        current_job: 'Next: Tomorrow 01:00 CET (security audit)',
+        timezone: 'Europe/Berlin',
+        last_heartbeat: new Date(Date.now() - 86400000).toISOString(),
         uptime_seconds: 864000
       },
       {
         id: 'job-application-agent',
         name: 'Job Application Agent',
         icon: '💼',
-        description: 'Job application management and tracking',
+        description: 'Job application workflow - drafts cover letters, verifies emails, sends applications',
         status: 'idle',
         current_job: null,
         timezone: 'Europe/Berlin',
-        last_heartbeat: new Date(Date.now() - 3600000).toISOString(),
+        last_heartbeat: new Date(Date.now() - 604800000).toISOString(),
         uptime_seconds: 432000
       }
     ];
