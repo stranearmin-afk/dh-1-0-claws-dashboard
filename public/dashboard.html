@@ -41,8 +41,23 @@
     }
 
     function getCurrentTimeZone() {
+      const now = new Date();
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      return tz === 'Europe/Berlin' ? 'CET/CEST' : tz.split('/')[1] || tz;
+      const tzName = tz === 'Europe/Berlin' ? 'CET/CEST' : tz.split('/')[1] || tz;
+      
+      // Get current time in Berlin
+      const berlinTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+      const utcTime = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const offsetMs = berlinTime - utcTime;
+      const offsetHours = Math.floor(Math.abs(offsetMs) / (1000 * 60 * 60));
+      const offsetMins = Math.floor((Math.abs(offsetMs) % (1000 * 60 * 60)) / (1000 * 60));
+      const offsetSign = offsetMs >= 0 ? '+' : '-';
+      const offset = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+      
+      const hours = String(berlinTime.getHours()).padStart(2, '0');
+      const minutes = String(berlinTime.getMinutes()).padStart(2, '0');
+      
+      return `${hours}:${minutes} ${tzName} (${offset})`;
     }
 
     function formatTimeGerman(isoString) {
