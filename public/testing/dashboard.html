@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Command Center - Testing v1.0.4</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 1.1em;
+      margin-bottom: 5px;
+    }
+    
+    .version-info {
+      color: #64748b;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #334155;
+      flex-wrap: wrap;
+    }
+    
+    .tab-btn {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1em;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      bottom: -1px;
+    }
+    
+    .tab-btn:hover {
+      color: #cbd5e1;
+    }
+    
+    .tab-btn.active {
+      color: #60a5fa;
+      border-bottom-color: #60a5fa;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+    
+    thead {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+      border-bottom: 2px solid #475569;
+    }
+    
+    th {
+      padding: 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #cbd5e1;
+      font-size: 0.9em;
+    }
+    
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #334155;
+      color: #e2e8f0;
+    }
+    
+    tbody tr:hover {
+      background-color: rgba(30, 41, 59, 0.5);
+    }
+    
+    .icon {
+      font-size: 1.3em;
+      min-width: 30px;
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      font-weight: 500;
+    }
+    
+    .status-active {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+    }
+    
+    .status-idle {
+      background: rgba(107, 114, 128, 0.15);
+      color: #d1d5db;
+    }
+    
+    .status-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+    }
+    
+    .status-error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+    
+    .timestamp {
+      font-family: monospace;
+      font-size: 0.85em;
+      color: #cbd5e1;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #334155;
+      color: #64748b;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚙️ Agent Command Center - Testing</h1>
+      <p class="subtitle">Real-time monitoring with live data</p>
+      <div class="version-info">Version <strong>v1.0.4</strong> | Europe/Berlin Timezone</div>
+    </header>
+    
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(event, 'agents')">⚡ Agents (7)</button>
+      <button class="tab-btn" onclick="switchTab(event, 'jobs')">⏰ Scheduled Jobs (8)</button>
+    </div>
+    
+    <div id="agents" class="tab-content active">
+      <h2>🤖 Active Agents</h2>
+      <div id="agents-container"></div>
+    </div>
+    
+    <div id="jobs" class="tab-content">
+      <h2>📋 Scheduled Jobs</h2>
+      <div id="jobs-container"></div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px; color: #94a3b8;">
+      Last updated: <span id="last-update">loading...</span>
+    </div>
+    
+    <div class="footer">
+      <p>Agent Command Center v1.0.4 | Testing Sub-page</p>
+    </div>
+  </div>
+  
+  <script>
+    const AGENTS = [
+      { name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', description: 'Performance coach', status: 'active', nextRun: '2026-03-31T09:00:00Z', lastRun: '2026-03-27T08:00:00Z' },
+      { name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', description: 'Executive analytics', status: 'active', nextRun: '2026-03-31T10:00:00Z', lastRun: '2026-03-26T10:00:00Z' },
+      { name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', description: 'Calendar briefing', status: 'active', nextRun: '2026-03-29T18:00:00Z', lastRun: '2026-03-22T18:00:00Z' },
+      { name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', description: 'Daily monitoring', status: 'active', nextRun: '2026-03-28T18:00:00Z', lastRun: '2026-03-27T08:00:00Z' },
+      { name: 'Research Scout', icon: '🔍', version: 'Daily', description: 'Web research', status: 'active', nextRun: '2026-03-27T16:00:00Z', lastRun: '2026-03-27T13:00:00Z' },
+      { name: 'Bouncer Agent', icon: '🚪', version: 'Daily', description: 'Security audit', status: 'active', nextRun: '2026-03-28T01:00:00Z', lastRun: '2026-03-27T01:00:00Z' },
+      { name: 'Job Application Agent', icon: '💼', version: 'v2.0', description: 'Job applications', status: 'idle', nextRun: null, lastRun: '2026-03-20T14:30:00Z' }
+    ];
+    
+    const JOBS = [
+      { name: 'Cami Daily Briefing', icon: '📧', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '19.2s', status: 'success' },
+      { name: 'Research Scout Hunt #1', icon: '🔍', schedule: 'Daily 08:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '27.7s', status: 'success' },
+      { name: 'Research Scout Hunt #2', icon: '🔍', schedule: 'Daily 16:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '11.4s', status: 'success' },
+      { name: 'Research Scout Hunt #3', icon: '🔍', schedule: 'Daily 00:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '9.3s', status: 'success' },
+      { name: 'Bouncer Security Audit', icon: '🛡️', schedule: 'Daily 01:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '34.7s', status: 'success' },
+      { name: 'Consolidate Memory', icon: '💾', schedule: 'Daily 22:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '6.0s', status: 'success' },
+      { name: 'Healthcheck Security Audit', icon: '⚕️', schedule: 'Daily 02:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '12.4s', status: 'error' },
+      { name: 'Cami Weekly Briefing', icon: '📅', schedule: 'Sunday 18:00', nextRun: '2026-03-29T20:00:00Z', lastRun: '2026-03-22T19:00:09Z', duration: '16.9s', status: 'success' }
+    ];
+    
+    function formatTime(isoString) {
+      if (!isoString) return 'Never';
+      return new Date(isoString).toLocaleString('en-DE', { timeZone: 'Europe/Berlin', year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    
+    function renderAgents() {
+      const html = '<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>' + AGENTS.map(a => `<tr><td><span class="icon">${a.icon}</span> ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${a.nextRun ? formatTime(a.nextRun) : 'N/A'}</td><td>${formatTime(a.lastRun)}</td></tr>`).join('') + '</tbody></table>';
+      document.getElementById('agents-container').innerHTML = html;
+    }
+    
+    function renderJobs() {
+      const html = '<table><thead><tr><th>Job Name</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>' + JOBS.map(j => `<tr><td><span class="icon">${j.icon}</span> ${j.name}</td><td>${j.schedule}</td><td>${formatTime(j.nextRun)}</td><td>${formatTime(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('') + '</tbody></table>';
+      document.getElementById('jobs-container').innerHTML = html;
+    }
+    
+    function switchTab(e, tab) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      e.target.classList.add('active');
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAgents();
+      renderJobs();
+      document.getElementById('last-update').textContent = new Date().toLocaleString('en-DE', { timeZone: 'Europe/Berlin' });
+    });
+  </script>
+</body>
+</html>
