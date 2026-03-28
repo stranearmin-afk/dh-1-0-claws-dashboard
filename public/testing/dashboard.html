@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center v1.0.10</title>
+  <title>Agent Command Center v1.0.11</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,20 +35,16 @@
     .status-success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
     .status-error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
     .status-info { background: rgba(33, 150, 243, 0.2); color: #2196f3; }
-    .loading { text-align: center; color: #90caf9; padding: 20px; }
     .last-updated { text-align: right; color: #666; font-size: 0.9em; margin-top: 10px; }
     .data-status { padding: 10px; border-radius: 4px; margin-bottom: 10px; background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196f3; color: #90caf9; }
     .data-status.warning { background: rgba(255, 193, 7, 0.1); border-left-color: #ffc107; color: #ffc107; }
     .data-status.success { background: rgba(76, 175, 80, 0.1); border-left-color: #4caf50; color: #4caf50; }
-    .refresh-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: #666; }
-    .refresh-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🎯📊 Agent Command Center v1.0.10</h1>
+      <h1>🎯📊 Agent Command Center v1.0.11</h1>
       <p class="subtitle">Real-time agent and cron job monitoring (live Google Sheets data)</p>
     </header>
     
@@ -57,18 +53,13 @@
         <span>🔄</span>
         <span id="refreshLabel">Refresh Now</span>
       </button>
-      <div class="refresh-indicator">
-        <div class="refresh-dot"></div>
-        <span>Auto-refresh: <strong>2 seconds</strong></span>
-      </div>
     </div>
     
     <main id="main"></main>
   </div>
   <script>
-    const WEBHOOK_URL = '/api/webhook';
-    const APP_VERSION = 'v1.0.10';
-    const AUTO_REFRESH_INTERVAL = 2000; // 2 seconds
+    const FETCH_SHEETS_URL = '/api/fetch-sheets';
+    const APP_VERSION = 'v1.0.11';
     
     let isLoggedIn = false;
     let agents = [];
@@ -92,19 +83,19 @@
       
       isRefreshing = true;
       btn.classList.add('loading');
-      label.textContent = 'Refreshing...';
+      label.textContent = 'Fetching...';
       
-      await fetchDataFromWebhook();
+      await fetchLiveData();
       
       isRefreshing = false;
       btn.classList.remove('loading');
       label.textContent = 'Refresh Now';
     }
 
-    async function fetchDataFromWebhook() {
+    async function fetchLiveData() {
       try {
-        console.log('[WEBHOOK] Fetching from', WEBHOOK_URL);
-        const response = await fetch(WEBHOOK_URL, {
+        console.log('[FETCH] Getting live data from /api/fetch-sheets');
+        const response = await fetch(FETCH_SHEETS_URL, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -113,68 +104,31 @@
         });
         
         if (!response.ok) {
-          console.log('[WEBHOOK] HTTP', response.status);
+          console.log('[FETCH] HTTP', response.status);
           throw new Error(`HTTP ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('[WEBHOOK] Response:', result);
+        console.log('[FETCH] Response:', result);
         
         if (result.success && result.data) {
-          console.log('[WEBHOOK] Got live data from webhook');
+          console.log('[FETCH] Got live data from Google Sheets');
           
-          const hasAgents = result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1;
-          const hasJobs = result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1;
+          dataSource = 'live';
+          agents = result.data.agents || [];
+          cronJobs = result.data.jobs || [];
           
-          if (!hasAgents && !hasJobs) {
-            console.log('[WEBHOOK] No live data yet, using mock data');
-            dataSource = 'mock';
-            agents = getMockAgents();
-            cronJobs = getMockCronJobs();
-          } else {
-            dataSource = 'live';
-            
-            if (result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1) {
-              agents = result.data.agents.slice(1).map(row => {
-                if (!row || !Array.isArray(row) || row.length < 2) return null;
-                return {
-                  id: row[0] || '',
-                  name: row[1] || '',
-                  icon: row[2] || '',
-                  version: row[3] || '',
-                  status: row[4] || 'unknown',
-                  nextSchedule: row[5] || '',
-                  lastRun: row[6] || '',
-                  description: row[7] || ''
-                };
-              }).filter(a => a && a.name);
-              console.log('[WEBHOOK] Parsed', agents.length, 'agents');
-            }
-            
-            if (result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1) {
-              cronJobs = result.data.jobs.slice(1).map(row => {
-                if (!row || !Array.isArray(row) || row.length < 2) return null;
-                return {
-                  id: row[0] || '',
-                  name: row[1] || '',
-                  icon: row[2] || '',
-                  schedule: row[3] || '',
-                  nextRun: row[4] || '',
-                  lastRun: row[5] || '',
-                  duration: row[6] || '',
-                  status: row[7] || 'unknown'
-                };
-              }).filter(j => j && j.name);
-              console.log('[WEBHOOK] Parsed', cronJobs.length, 'jobs');
-            }
-          }
+          console.log('[FETCH] Parsed:', {
+            agents: agents.length,
+            jobs: cronJobs.length,
+          });
           
           lastUpdated = new Date(result.timestamp || Date.now()).toLocaleTimeString();
           showDashboard();
           return;
         }
       } catch (err) {
-        console.error('[WEBHOOK] Fetch error:', err.message);
+        console.error('[FETCH] Error:', err.message);
       }
       
       console.log('[FALLBACK] Using mock data');
@@ -188,7 +142,6 @@
       return [
         { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-28T08:00:00Z', description: 'Personal performance coach' },
         { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-27T10:00:00Z', description: 'Executive analytics' },
-        { id: '3', name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-29T18:00:00Z', lastRun: '2026-03-22T18:00:00Z', description: 'Calendar briefing' },
       ];
     }
 
@@ -223,15 +176,11 @@
 
     if (localStorage.getItem('dashboardLoggedIn')) {
       isLoggedIn = true;
-      fetchDataFromWebhook();
+      // Fetch live data immediately on login
+      fetchLiveData();
     } else {
       document.getElementById('main').innerHTML = `<div class="login-form" style="max-width: 300px; margin: 50px auto; padding: 30px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 8px;"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: #e0e0e0;"><button type="submit" style="width: 100%; padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600;">Log In</button></form><div id="loginError" class="error" style="display: none; color: #f44336; margin-top: 10px; text-align: center;"></div></div>`;
     }
-
-    // Auto-refresh every 2 seconds
-    setInterval(() => {
-      if (isLoggedIn && !isRefreshing) fetchDataFromWebhook();
-    }, AUTO_REFRESH_INTERVAL);
 
     function handleLogin(e) {
       e.preventDefault();
@@ -239,7 +188,8 @@
       if (password === 'admin') {
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
-        fetchDataFromWebhook();
+        // Fetch live data immediately after login
+        fetchLiveData();
       } else {
         document.getElementById('loginError').textContent = '❌ Invalid credentials';
         document.getElementById('loginError').style.display = 'block';
