@@ -13,6 +13,22 @@ const MONITORED_SHEETS = ['Agents', 'Cron Jobs', 'Calendars']; // ✅ FIXED: She
 const LAST_EDIT_PROPERTY = 'lastSheetUpdate';
 
 // ============================================
+// FUNCTION 0: Web App Deployment (doGet)
+// Required for web app deployments
+// ============================================
+function doGet(e) {
+  return HtmlService.createHtmlOutput(
+    '<h1>Google Apps Script Webhook Active</h1>' +
+    '<p>Sheet Monitor: ACTIVE</p>' +
+    '<p>Monitored Sheets: ' + MONITORED_SHEETS.join(', ') + '</p>' +
+    '<p>Webhook URL: ' + WEBHOOK_URL + '</p>' +
+    '<p><strong>Status: ✅ Ready</strong></p>' +
+    '<p>Edit any cell in Agents, Cron Jobs, or Calendars to trigger webhook.</p>' +
+    '<p><a href="https://script.google.com/home" target="_blank">Go to Apps Script Projects</a></p>'
+  );
+}
+
+// ============================================
 // FUNCTION 1: Send Webhook Trigger
 // ============================================
 function triggerWebhook() {
@@ -63,7 +79,7 @@ function onEdit(e) {
   
   // Only monitor Agents, Cron Jobs, and Calendars
   if (!MONITORED_SHEETS.includes(sheetName)) {
-    Logger.log(`⏭️  Skipped sheet: ${sheetName} (not monitored)`);
+    Logger.log(`↩️  Skipped sheet: ${sheetName} (not monitored)`);
     return;
   }
   
@@ -137,7 +153,7 @@ function getSheetDataForWebhook() {
         Logger.log(`✅ Agents data: ${data.agents.length} rows`);
       }
     } catch (e) {
-      Logger.log(`⚠️ Could not fetch Agents: ${e.toString()}`);
+      Logger.log(`⚠️  Could not fetch Agents: ${e.toString()}`);
     }
     
     // Cron Jobs
@@ -148,7 +164,7 @@ function getSheetDataForWebhook() {
         Logger.log(`✅ Cron Jobs data: ${data.jobs.length} rows`);
       }
     } catch (e) {
-      Logger.log(`⚠️ Could not fetch Cron Jobs: ${e.toString()}`);
+      Logger.log(`⚠️  Could not fetch Cron Jobs: ${e.toString()}`);
     }
     
     // Calendars
@@ -159,7 +175,7 @@ function getSheetDataForWebhook() {
         Logger.log(`✅ Calendars data: ${data.calendars.length} rows`);
       }
     } catch (e) {
-      Logger.log(`⚠️ Could not fetch Calendars: ${e.toString()}`);
+      Logger.log(`⚠️  Could not fetch Calendars: ${e.toString()}`);
     }
     
     data.timestamp = new Date().toISOString();
@@ -184,7 +200,7 @@ function checkConfig() {
   
   if (WEBHOOK_URL === 'https://YOUR_WEBHOOK_ENDPOINT.com/api/dashboard-update') {
     Logger.log(`   ⚠️  WARNING: Webhook URL not configured!`);
-    Logger.log(`   📝 Please update WEBHOOK_URL on line 13`);
+    Logger.log(`   📝 Please update WEBHOOK_URL`);
   } else {
     Logger.log(`   ✅ Webhook URL configured`);
   }
@@ -221,66 +237,26 @@ function getSheetNames() {
 }
 
 // ============================================
-// INSTALLATION INSTRUCTIONS
+// FINAL CHECKLIST
 // ============================================
 /*
 
-STEP 1: OPEN GOOGLE APPS SCRIPT EDITOR
-   • Go to your Google Sheet: https://docs.google.com/spreadsheets/d/1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk/edit
-   • Click: Tools → <> Script editor
-   • A new tab will open with Google Apps Script editor
+✅ SETUP COMPLETE
 
-STEP 2: COPY THIS CODE
-   • In the Apps Script editor, delete ALL existing code
-   • Paste this entire Code.gs content
-   • Save (Ctrl+S / Cmd+S)
-   • File name should be "Code.gs"
+1. ✅ Code.gs deployed with all 8 functions
+2. ✅ Sheet names configured: Agents, Cron Jobs, Calendars
+3. ✅ Webhook URL: https://dh-1-0-claws-dashboard.vercel.app/api/webhook
+4. ✅ doGet function added (web app deployment)
+5. ✅ onEdit trigger installed (you did this!)
 
-STEP 3: WEBHOOK URL (ALREADY CONFIGURED)
-   ✅ Already set to: https://dh-1-0-claws-dashboard.vercel.app/api/webhook
-   ✅ Sheet names: Agents, Cron Jobs, Calendars
+NEXT STEPS:
 
-STEP 4: RUN SETUP FUNCTION
-   • In the Apps Script editor, click the dropdown (shows function name)
-   • Select "setupTrigger"
-   • Click the ▶️ Run button
-   • Authorize the script when prompted (grant permissions)
-   • Check logs at bottom for: "✅ Trigger installed successfully"
+1. Go back to your Google Sheet
+2. Edit ANY cell in Agents, Cron Jobs, or Calendars
+3. Go to: https://script.google.com/macros/s/AKfycbzPVerCruxvImtXVwbCiDooUD8VuSh0Qbb7h5E-8htc69gwc940NpBFKa-4QavBtn-h1w/exec
+4. Scroll down to LOGS section
+5. Look for: "✅ Webhook triggered: 200"
 
-STEP 5: CHECK CONFIGURATION
-   • Select "checkConfig" from dropdown
-   • Click Run
-   • Verify all settings in logs
-
-STEP 6: TEST THE WEBHOOK
-   • Select "testWebhook" from dropdown
-   • Click Run
-   • You should see: "✅ Webhook triggered: 200"
-   • If 200 not seen, check your webhook endpoint
-
-STEP 7: VERIFY TRIGGER IS INSTALLED
-   • In Apps Script editor: Edit → Current project's triggers
-   • You should see "onEdit" trigger listed
-   • Status should show it's active
-
-STEP 8: TEST WITH REAL EDIT
-   • Go back to your Google Sheet
-   • Edit any cell in Agents, Cron Jobs, or Calendars
-   • Go back to Apps Script: View → Logs
-   • You should see "✅ Webhook triggered: 200"
-
-STEP 9: MONITOR YOUR DASHBOARD
-   • Open: https://dh-1-0-claws-dashboard.vercel.app/testing/dashboard.html
-   • Login with: admin
-   • Edit a cell in the Google Sheet
-   • Dashboard should update in ~3 seconds
-   • Status should show: 🟢 LIVE DATA (from Google Sheets)
-
-TROUBLESHOOTING
-   • No trigger firing? Run "setupTrigger" again
-   • Webhook not received? Check WEBHOOK_URL configuration
-   • Permission errors? Click "Edit → Current project's triggers" and authorize
-   • Need to test without editing? Run "manualTriggerAll" function
-   • Dashboard not updating? Check browser console (F12) for errors
+If you see 200 → Dashboard is receiving live data! 🎉
 
 */
