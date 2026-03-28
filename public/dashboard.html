@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Dashboard v1.0.15</title>
+  <title>Agent Dashboard v1.0.16</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #e0e0e0; padding: 20px; }
     .container { max-width: 1200px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 30px; }
     h1 { color: #2196f3; font-size: 2.5em; margin-bottom: 10px; }
-    .refresh-btn { padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 20px auto; }
+    .subtitle { color: #90caf9; font-size: 1.1em; margin-bottom: 20px; }
+    .refresh-btn { padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin: 20px 0; }
     .refresh-btn:hover { background: #1976d2; }
     .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .status { padding: 10px; border-radius: 4px; margin-bottom: 20px; text-align: center; }
+    .status { padding: 15px; border-radius: 4px; margin-bottom: 20px; text-align: center; font-weight: 600; }
     .status.success { background: rgba(76, 175, 80, 0.1); color: #4caf50; border: 1px solid #4caf50; }
     .status.error { background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid #f44336; }
     .status.info { background: rgba(33, 150, 243, 0.1); color: #2196f3; border: 1px solid #2196f3; }
+    .status.warning { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid #ffc107; }
     table { width: 100%; border-collapse: collapse; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; margin: 20px 0; }
     th { padding: 12px; text-align: left; color: #2196f3; font-weight: 600; border-bottom: 2px solid #333; background: rgba(33, 150, 243, 0.1); }
     td { padding: 10px 12px; border-bottom: 1px solid #333; }
@@ -29,13 +31,15 @@
     .login input { width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: white; }
     .login button { width: 100%; padding: 10px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
     .login button:hover { background: #1976d2; }
+    .info-box { padding: 15px; background: rgba(33, 150, 243, 0.1); border: 1px solid #2196f3; border-radius: 4px; margin-bottom: 20px; color: #90caf9; }
+    .info-box strong { color: #2196f3; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>📊 Dashboard v1.0.15</h1>
-      <p>Real-time Google Sheets Data</p>
+      <h1>📊 Dashboard v1.0.16</h1>
+      <p class="subtitle">Google Sheets Real-Time Data</p>
     </header>
     
     <div id="loginContainer" class="login" style="display: none;">
@@ -48,6 +52,12 @@
     </div>
     
     <div id="dashboardContainer" style="display: none;">
+      <div class="info-box">
+        <strong>📌 How it works:</strong><br>
+        1. Edit a cell in the Google Sheet → data is pushed automatically<br>
+        2. Click <strong>Refresh Data</strong> to fetch the latest data here
+      </div>
+      
       <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
       <div id="status"></div>
       <div id="content"></div>
@@ -72,8 +82,8 @@
       btn.textContent = '🔄 Loading...';
       
       try {
-        showStatus('⏳ Calling Google Apps Script...', 'info');
-        console.log('[REFRESH] Calling Google Apps Script doPost...');
+        showStatus('⏳ Step 1: Calling Google Apps Script...', 'info');
+        console.log('[REFRESH] Step 1: Calling Google Apps Script doPost...');
         
         // Call the Google Apps Script web app (this triggers doPost → sendAllDataNow)
         const scriptResponse = await fetch(GOOGLE_APPS_SCRIPT_URL, {
@@ -82,17 +92,20 @@
           mode: 'no-cors'  // Important: Apps Script requires no-cors
         });
         
-        showStatus('📊 Fetching data from /api/sheets...', 'info');
-        console.log('[REFRESH] Waiting for data to be posted...');
+        showStatus('⏳ Step 2: Waiting for data to be posted...', 'info');
+        console.log('[REFRESH] Step 2: Waiting for Google Apps Script to POST data...');
         
-        // Wait for the data to be posted
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait for the data to be posted (2 seconds should be enough)
+        await new Promise(resolve => setTimeout(resolve, 2500));
         
-        // Fetch the data from the sheets API
+        // Step 3: Fetch the data from the sheets API
+        showStatus('⏳ Step 3: Fetching data from /api/sheets...', 'info');
+        console.log('[REFRESH] Step 3: Fetching from /api/sheets...');
+        
         const sheetsResponse = await fetch(SHEETS_API_URL);
         
         if (!sheetsResponse.ok) {
-          throw new Error(`Failed to fetch sheets data: ${sheetsResponse.status}`);
+          throw new Error(`HTTP ${sheetsResponse.status}`);
         }
         
         const data = await sheetsResponse.json();
@@ -100,31 +113,46 @@
         
         if (data.success && data.data) {
           lastData = data;
-          showStatus('✅ Data refreshed successfully', 'success');
+          showStatus('✅ Data refreshed successfully!', 'success');
           displayData(data);
         } else {
-          showStatus('⚠️ No data available - edit a cell in Google Sheet to trigger data push', 'error');
+          showStatus('⚠️ No data available. Edit a cell in Google Sheet first to push data.', 'warning');
+          displayEmptyState();
         }
       } catch (error) {
         console.error('[REFRESH] Error:', error);
         showStatus(`❌ Error: ${error.message}`, 'error');
+        displayEmptyState();
       } finally {
         btn.disabled = false;
         btn.textContent = '🔄 Refresh Data';
       }
     }
     
+    function displayEmptyState() {
+      const content = document.getElementById('content');
+      content.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">📌 No data yet. Edit a cell in your Google Sheet to push data, then click Refresh.</p>';
+    }
+    
     function displayData(data) {
       const content = document.getElementById('content');
-      const timestamp = new Date(data.timestamp).toLocaleString();
+      const timestamp = new Date(data.timestamp).toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        timeZone: 'Europe/Berlin'
+      });
       
       const agents = data.data.agents || [];
       const jobs = data.data.jobs || [];
       
-      let html = `<p style="color: #666; margin-bottom: 20px;">Last updated: ${timestamp}</p>`;
+      let html = `<p style="color: #999; margin-bottom: 20px; font-size: 0.9em;">📅 Last updated: ${timestamp}</p>`;
       
       if (agents.length > 1) {
-        html += '<h2 style="margin-top: 30px;">Agents</h2>';
+        html += '<h2 style="margin-top: 30px; color: #2196f3;">⚡ Agents</h2>';
         html += '<table><thead><tr><th>Name</th><th>Version</th><th>Status</th><th>Last Run</th></tr></thead><tbody>';
         for (let i = 1; i < agents.length; i++) {
           const row = agents[i];
@@ -140,7 +168,7 @@
       }
       
       if (jobs.length > 1) {
-        html += '<h2 style="margin-top: 30px;">Cron Jobs</h2>';
+        html += '<h2 style="margin-top: 30px; color: #2196f3;">⏰ Cron Jobs</h2>';
         html += '<table><thead><tr><th>Name</th><th>Schedule</th><th>Next Run</th><th>Status</th></tr></thead><tbody>';
         for (let i = 1; i < jobs.length; i++) {
           const row = jobs[i];
@@ -155,7 +183,7 @@
       }
       
       if (agents.length <= 1 && jobs.length <= 1) {
-        html += '<p style="color: #666; text-align: center; padding: 40px;">No data available. Edit a cell in Google Sheet to trigger data push.</p>';
+        html += '<p style="color: #666; text-align: center; padding: 40px;">No data in the sheets yet.</p>';
       }
       
       content.innerHTML = html;
@@ -170,7 +198,10 @@
         localStorage.setItem('dashboardLoggedIn', 'true');
         document.getElementById('loginContainer').style.display = 'none';
         document.getElementById('dashboardContainer').style.display = 'block';
-        refreshData();
+        
+        // Show empty state - DO NOT auto-refresh
+        displayEmptyState();
+        showStatus('📌 Click "Refresh Data" to load the latest data from Google Sheets', 'info');
       } else {
         const errorEl = document.getElementById('loginError');
         errorEl.textContent = '❌ Invalid password';
@@ -183,7 +214,10 @@
       isLoggedIn = true;
       document.getElementById('dashboardContainer').style.display = 'block';
       document.getElementById('loginContainer').style.display = 'none';
-      // Don't auto-refresh on load, wait for user click
+      
+      // Show empty state - DO NOT auto-refresh
+      displayEmptyState();
+      showStatus('📌 Click "Refresh Data" to load the latest data from Google Sheets', 'info');
     } else {
       document.getElementById('loginContainer').style.display = 'block';
       document.getElementById('dashboardContainer').style.display = 'none';
