@@ -1,1 +1,226 @@
-<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Agent Command Center v1.0</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family%
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Command Center v1.0.13</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; background-image: radial-gradient(circle at 20% 50%, rgba(33, 150, 243, 0.1), transparent), radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.05), transparent); color: #e0e0e0; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 30px; }
+    h1 { color: #2196f3; font-size: 2.5em; margin-bottom: 10px; }
+    .subtitle { color: #90caf9; font-size: 1.1em; }
+    .header-controls { display: flex; gap: 15px; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .refresh-btn { padding: 8px 16px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+    .refresh-btn:hover { background: #1976d2; opacity: 0.9; }
+    .refresh-btn:active { transform: scale(0.95); }
+    .refresh-btn.loading { opacity: 0.7; pointer-events: none; }
+    .refresh-btn.loading span { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .tabs { display: flex; gap: 10px; margin: 30px 0; border-bottom: 2px solid #333; }
+    .tab-btn { padding: 10px 20px; background: none; border: none; color: #90caf9; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; transition: all 0.3s; }
+    .tab-btn.active { color: #2196f3; border-bottom-color: #2196f3; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    table { width: 100%; border-collapse: collapse; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; margin: 20px 0; }
+    thead { background: rgba(33, 150, 243, 0.1); }
+    th { padding: 12px; text-align: left; color: #2196f3; font-weight: 600; border-bottom: 2px solid #333; }
+    td { padding: 10px 12px; border-bottom: 1px solid #333; }
+    tr:hover { background: rgba(33, 150, 243, 0.05); }
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
+    .status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+    .status-idle { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+    .status-success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+    .status-error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+    .status-info { background: rgba(33, 150, 243, 0.2); color: #2196f3; }
+    .last-updated { text-align: right; color: #666; font-size: 0.9em; margin-top: 10px; }
+    .data-status { padding: 10px; border-radius: 4px; margin-bottom: 10px; background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196f3; color: #90caf9; }
+    .data-status.warning { background: rgba(255, 193, 7, 0.1); border-left-color: #ffc107; color: #ffc107; }
+    .data-status.success { background: rgba(76, 175, 80, 0.1); border-left-color: #4caf50; color: #4caf50; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎯📊 Agent Command Center v1.0.13</h1>
+      <p class="subtitle">Real-time agent and cron job monitoring (live Google Sheets data)</p>
+    </header>
+    
+    <div class="header-controls">
+      <button class="refresh-btn" id="refreshBtn" onclick="triggerDashboardRefresh()">
+        <span>🔄</span>
+        <span id="refreshLabel">Refresh Now</span>
+      </button>
+    </div>
+    
+    <main id="main"></main>
+  </div>
+  <script>
+    const SHEETS_API_URL = '/api/sheets';
+    const APP_VERSION = 'v1.0.13';
+    
+    let isLoggedIn = false;
+    let agents = [];
+    let cronJobs = [];
+    let activeTab = localStorage.getItem('dashboardTab') || 'agents';
+    let lastUpdated = 'Never';
+    let dataSource = 'mock';
+    let isRefreshing = false;
+
+    function switchTab(tab) {
+      activeTab = tab;
+      localStorage.setItem('dashboardTab', tab);
+      showDashboard();
+    }
+
+    async function triggerDashboardRefresh() {
+      if (isRefreshing) return;
+      
+      const btn = document.getElementById('refreshBtn');
+      const label = document.getElementById('refreshLabel');
+      
+      isRefreshing = true;
+      btn.classList.add('loading');
+      label.textContent = 'Fetching...';
+      
+      try {
+        // Fetch directly from Google Sheets via Composio
+        console.log('[REFRESH] Fetching from Google Sheets via Composio');
+        await fetchDataFromSheets();
+      } catch (error) {
+        console.error('[REFRESH] Error:', error);
+        label.textContent = 'Error';
+      } finally {
+        isRefreshing = false;
+        btn.classList.remove('loading');
+        label.textContent = 'Refresh Now';
+      }
+    }
+
+    async function fetchDataFromSheets() {
+      try {
+        console.log('[SHEETS] Fetching from', SHEETS_API_URL);
+        const response = await fetch(SHEETS_API_URL, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('[SHEETS] Response:', result);
+        
+        if (result.success && result.data) {
+          const hasAgents = result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1;
+          const hasJobs = result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1;
+          
+          if (hasAgents || hasJobs) {
+            dataSource = 'live';
+            
+            if (hasAgents) {
+              agents = result.data.agents.slice(1).map(row => ({
+                id: row[0] || '',
+                name: row[1] || '',
+                icon: row[2] || '',
+                version: row[3] || '',
+                status: row[4] || 'unknown',
+                nextSchedule: row[5] || '',
+                lastRun: row[6] || '',
+                description: row[7] || ''
+              })).filter(a => a && a.name);
+            }
+            
+            if (hasJobs) {
+              cronJobs = result.data.jobs.slice(1).map(row => ({
+                id: row[0] || '',
+                name: row[1] || '',
+                icon: row[2] || '',
+                schedule: row[3] || '',
+                nextRun: row[4] || '',
+                lastRun: row[5] || '',
+                duration: row[6] || '',
+                status: row[7] || 'unknown'
+              })).filter(j => j && j.name);
+            }
+            
+            lastUpdated = new Date(result.timestamp || Date.now()).toLocaleTimeString();
+            showDashboard();
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('[SHEETS] Error:', err.message);
+      }
+      
+      // Fallback to mock
+      dataSource = 'mock';
+      agents = getMockAgents();
+      cronJobs = getMockCronJobs();
+      showDashboard();
+    }
+
+    function getMockAgents() {
+      return [
+        { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-28T08:00:00Z', description: 'Personal performance coach' },
+      ];
+    }
+
+    function getMockCronJobs() {
+      return [
+        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily 18:00', nextRun: '2026-03-29T13:00:00Z', lastRun: '2026-03-28T12:00:00Z', duration: '19.2s', status: 'success' },
+      ];
+    }
+
+    function formatDate(isoString) {
+      if (!isoString) return 'N/A';
+      try {
+        const date = new Date(isoString);
+        return date.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch (e) {
+        return isoString;
+      }
+    }
+
+    function showDashboard() {
+      const dataStatusClass = dataSource === 'live' ? 'success' : 'warning';
+      const dataStatusText = dataSource === 'live' ? '✅ LIVE DATA (from Google Sheets)' : '⚠️ DEMO DATA';
+      const statusBar = `<div class="data-status ${dataStatusClass}">${dataStatusText}</div>`;
+      
+      const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.length > 0 ? agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding: 20px;">No agents</td></tr>'}</tbody></table>`;
+      const cronTabContent = `<table><thead><tr><th>Job</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>${cronJobs.length > 0 ? cronJobs.map(j => `<tr><td>${j.icon} ${j.name}</td><td>${j.schedule}</td><td>${formatDate(j.nextRun)}</td><td>${formatDate(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center; padding: 20px;">No jobs</td></tr>'}</tbody></table>`;
+      
+      const tabButtons = `<div style="margin-bottom: 20px;"><button class="tab-btn ${activeTab === 'agents' ? 'active' : ''}" onclick="switchTab('agents')" style="font-size: 0.95rem; font-weight: 600;">⚡ Agents (${agents.length})</button><button class="tab-btn ${activeTab === 'crons' ? 'active' : ''}" onclick="switchTab('crons')" style="font-size: 0.95rem; font-weight: 600;">🕐 Jobs (${cronJobs.length})</button></div>`;
+      
+      document.getElementById('main').innerHTML = statusBar + tabButtons + (activeTab === 'agents' ? agentTabContent : cronTabContent) + `<div class="last-updated">Last updated: ${lastUpdated} | Version: ${APP_VERSION}</div>`;
+    }
+
+    // On login: trigger refresh to fetch current data
+    if (localStorage.getItem('dashboardLoggedIn')) {
+      isLoggedIn = true;
+      triggerDashboardRefresh();
+    } else {
+      document.getElementById('main').innerHTML = `<div class="login-form" style="max-width: 300px; margin: 50px auto; padding: 30px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 8px;"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: #e0e0e0;"><button type="submit" style="width: 100%; padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600;">Log In</button></form><div id="loginError" class="error" style="display: none; color: #f44336; margin-top: 10px; text-align: center;"></div></div>`;
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const password = document.getElementById('passwordInput').value;
+      if (password === 'admin') {
+        isLoggedIn = true;
+        localStorage.setItem('dashboardLoggedIn', 'true');
+        triggerDashboardRefresh();
+      } else {
+        document.getElementById('loginError').textContent = '❌ Invalid credentials';
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
