@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center - Testing Dashboard v1.0.19</title>
+  <title>Agent Command Center - Testing Dashboard v1.0.20</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #d1d5db; padding: 20px; min-height: 100vh; }
@@ -40,6 +40,7 @@
     .login-box input { width: 100%; padding: 10px; margin: 10px 0; background: rgba(0, 0, 0, 0.5); border: 1px solid #374151; border-radius: 4px; color: #d1d5db; }
     .login-box button { width: 100%; padding: 10px; margin: 10px 0; }
     #loginError { color: #f44336; margin-top: 10px; display: none; text-align: center; }
+    .refresh-status { color: #60a5fa; font-size: 0.9em; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
@@ -59,18 +60,19 @@
       <header>
         <div>
           <h1>🎯 Agent Command Center</h1>
-          <p class="subtitle">Real-time monitoring • v1.0.19</p>
+          <p class="subtitle">Real-time monitoring • v1.0.20</p>
         </div>
         <div class="header-buttons">
-          <button class="btn-refresh" onclick="fetchData()">🔄 Refresh</button>
+          <button class="btn-refresh" id="refreshBtn">🔄 Refresh</button>
           <button class="btn-logout" onclick="handleLogout()">🚪 Logout</button>
         </div>
       </header>
+      <div class="refresh-status" id="refreshStatus">Fetching data...</div>
 
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('agents')">⚡ Agents</button>
-        <button class="tab-btn" onclick="switchTab('crons')">🕐 Jobs</button>
-        <button class="tab-btn" onclick="switchTab('calendars')">📅 Calendars</button>
+        <button class="tab-btn active" id="agentsTabBtn" onclick="switchTab('agents', event)">⚡ Agents</button>
+        <button class="tab-btn" id="cronsTabBtn" onclick="switchTab('crons', event)">🕐 Jobs</button>
+        <button class="tab-btn" id="calendarsTabBtn" onclick="switchTab('calendars', event)">📅 Calendars</button>
       </div>
 
       <div id="agents-tab" class="tab-content active">
@@ -124,6 +126,7 @@
     let agents = [];
     let cronJobs = [];
     let calendars = [];
+    let currentTab = 'agents';
 
     function formatDate(isoStr) {
       if (!isoStr) return 'N/A';
@@ -156,31 +159,55 @@
       document.getElementById('passwordInput').value = '';
     }
 
-    function switchTab(tab) {
+    function switchTab(tab, event) {
+      console.log('[TAB] Switching to:', tab);
+      currentTab = tab;
+      
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
       document.getElementById(tab + '-tab').classList.add('active');
-      event.target.classList.add('active');
+      
+      if (event && event.target) {
+        event.target.classList.add('active');
+      } else {
+        if (tab === 'agents') document.getElementById('agentsTabBtn').classList.add('active');
+        else if (tab === 'crons') document.getElementById('cronsTabBtn').classList.add('active');
+        else if (tab === 'calendars') document.getElementById('calendarsTabBtn').classList.add('active');
+      }
+      
+      console.log('[TAB] ✓ Switched to', tab);
     }
 
     async function fetchData() {
-      console.log('[FETCH] Getting data from /api/webhook');
+      console.log('[REFRESH] Button clicked - fetching data');
+      const statusEl = document.getElementById('refreshStatus');
+      statusEl.style.display = 'block';
+      statusEl.textContent = '⏳ Fetching data...';
+      
       try {
+        console.log('[FETCH] Getting data from /api/webhook');
         const res = await fetch('/api/webhook');
         console.log('[FETCH] Response status:', res.status);
-        if (!res.ok) throw new Error('Webhook returned ' + res.status);
+        
+        if (!res.ok) {
+          throw new Error('Webhook returned ' + res.status);
+        }
+        
         const data = await res.json();
-        console.log('[FETCH] Data:', data);
+        console.log('[FETCH] Response data:', data);
+        
         if (data.success && data.data) {
           agents = (data.data.agents || []).slice(1).map(row => ({
             id: row.values[0]?.formattedValue || '',
             name: row.values[1]?.formattedValue || '',
-            icon: row.values[2]?.formattedValue || '📌',
+            icon: row.values[2]?.formattedValue || '📋',
             version: row.values[3]?.formattedValue || '',
             status: row.values[4]?.formattedValue || 'idle',
             nextSchedule: row.values[5]?.formattedValue || '',
             lastRun: row.values[6]?.formattedValue || ''
           })).filter(a => a.name);
+          
           cronJobs = (data.data.jobs || []).slice(1).map(row => ({
             id: row.values[0]?.formattedValue || '',
             name: row.values[1]?.formattedValue || '',
@@ -191,20 +218,28 @@
             duration: row.values[6]?.formattedValue || '',
             status: row.values[7]?.formattedValue || ''
           })).filter(j => j.name);
+          
           calendars = (data.data.calendars || []).slice(1).map(row => ({
             id: row.values[0]?.formattedValue || '',
             name: row.values[1]?.formattedValue || '',
             description: row.values[2]?.formattedValue || '',
             access: row.values[3]?.formattedValue || ''
           })).filter(c => c.name);
-          console.log('[FETCH] ✓ Got', agents.length, 'agents,', cronJobs.length, 'jobs,', calendars.length, 'calendars');
+          
+          console.log('[FETCH] ✅ Got', agents.length, 'agents,', cronJobs.length, 'jobs,', calendars.length, 'calendars');
+          statusEl.textContent = '✅ Data refreshed: ' + agents.length + ' agents, ' + cronJobs.length + ' jobs';
+        } else {
+          throw new Error('Invalid response format');
         }
       } catch (e) {
-        console.error('[FETCH] Error:', e.message);
+        console.error('[FETCH] ❌ Error:', e.message);
         console.log('[FETCH] Using mock data');
+        statusEl.textContent = '⚠️ Using mock data (webhook unavailable)';
         loadMockData();
       }
+      
       renderData();
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
     }
 
     function loadMockData() {
@@ -232,6 +267,7 @@
           <td>${formatDate(a.lastRun)}</td>
         </tr>
       `).join('');
+      
       document.getElementById('crons-tbody').innerHTML = cronJobs.map(j => `
         <tr>
           <td>${j.icon} ${j.name}</td>
@@ -242,6 +278,7 @@
           <td><span class="status ${j.status}">${j.status}</span></td>
         </tr>
       `).join('');
+      
       document.getElementById('calendars-tbody').innerHTML = calendars.map(c => `
         <tr>
           <td>${c.name}</td>
@@ -250,6 +287,21 @@
         </tr>
       `).join('');
     }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      console.log('[INIT] Dashboard initialized');
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('[REFRESH] Button click detected');
+          fetchData();
+        });
+        console.log('[INIT] ✓ Refresh button listener attached');
+      } else {
+        console.error('[INIT] ❌ Refresh button not found');
+      }
+    });
 
     if (localStorage.getItem('dashboardLoggedIn')) {
       isLoggedIn = true;
