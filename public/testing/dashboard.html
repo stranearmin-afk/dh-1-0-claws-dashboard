@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center - Testing Dashboard v1.0.20</title>
+  <title>Agent Command Center - Testing Dashboard v1.0.21</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #d1d5db; padding: 20px; min-height: 100vh; }
@@ -60,7 +60,7 @@
       <header>
         <div>
           <h1>🎯 Agent Command Center</h1>
-          <p class="subtitle">Real-time monitoring • v1.0.20</p>
+          <p class="subtitle">Real-time monitoring • v1.0.21</p>
         </div>
         <div class="header-buttons">
           <button class="btn-refresh" id="refreshBtn">🔄 Refresh</button>
@@ -186,12 +186,12 @@
       statusEl.textContent = '⏳ Fetching data...';
       
       try {
-        console.log('[FETCH] Getting data from /api/webhook');
-        const res = await fetch('/api/webhook');
+        console.log('[FETCH] Getting data from /api/sheets');
+        const res = await fetch('/api/sheets');
         console.log('[FETCH] Response status:', res.status);
         
         if (!res.ok) {
-          throw new Error('Webhook returned ' + res.status);
+          throw new Error('API returned ' + res.status);
         }
         
         const data = await res.json();
@@ -201,7 +201,7 @@
           agents = (data.data.agents || []).slice(1).map(row => ({
             id: row.values[0]?.formattedValue || '',
             name: row.values[1]?.formattedValue || '',
-            icon: row.values[2]?.formattedValue || '📋',
+            icon: row.values[2]?.formattedValue || '📌',
             version: row.values[3]?.formattedValue || '',
             status: row.values[4]?.formattedValue || 'idle',
             nextSchedule: row.values[5]?.formattedValue || '',
@@ -234,7 +234,7 @@
       } catch (e) {
         console.error('[FETCH] ❌ Error:', e.message);
         console.log('[FETCH] Using mock data');
-        statusEl.textContent = '⚠️ Using mock data (webhook unavailable)';
+        statusEl.textContent = '⚠️ Using mock data (API unavailable)';
         loadMockData();
       }
       
