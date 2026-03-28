@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center v1.0.11</title>
+  <title>Agent Command Center v1.0.12</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -44,12 +44,12 @@
 <body>
   <div class="container">
     <header>
-      <h1>🎯📊 Agent Command Center v1.0.11</h1>
+      <h1>🎯📊 Agent Command Center v1.0.12</h1>
       <p class="subtitle">Real-time agent and cron job monitoring (live Google Sheets data)</p>
     </header>
     
     <div class="header-controls">
-      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
+      <button class="refresh-btn" id="refreshBtn" onclick="triggerDashboardRefresh()">
         <span>🔄</span>
         <span id="refreshLabel">Refresh Now</span>
       </button>
@@ -58,8 +58,9 @@
     <main id="main"></main>
   </div>
   <script>
-    const FETCH_SHEETS_URL = '/api/fetch-sheets';
-    const APP_VERSION = 'v1.0.11';
+    const TRIGGER_URL = '/api/dashboard-trigger';
+    const WEBHOOK_URL = '/api/webhook';
+    const APP_VERSION = 'v1.0.12';
     
     let isLoggedIn = false;
     let agents = [];
@@ -75,7 +76,7 @@
       showDashboard();
     }
 
-    async function manualRefresh() {
+    async function triggerDashboardRefresh() {
       if (isRefreshing) return;
       
       const btn = document.getElementById('refreshBtn');
@@ -83,19 +84,43 @@
       
       isRefreshing = true;
       btn.classList.add('loading');
-      label.textContent = 'Fetching...';
+      label.textContent = 'Triggering...';
       
-      await fetchLiveData();
-      
-      isRefreshing = false;
-      btn.classList.remove('loading');
-      label.textContent = 'Refresh Now';
+      try {
+        // Step 1: Call Google Apps Script trigger
+        console.log('[REFRESH] Calling dashboard trigger endpoint');
+        const triggerResponse = await fetch(TRIGGER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (triggerResponse.ok) {
+          console.log('[REFRESH] Trigger sent successfully');
+          label.textContent = 'Fetching...';
+          
+          // Wait 1 second for Apps Script to send data
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Step 2: Fetch from webhook
+          await fetchDataFromWebhook();
+        } else {
+          console.error('[REFRESH] Trigger failed');
+          label.textContent = 'Error';
+        }
+      } catch (error) {
+        console.error('[REFRESH] Error:', error);
+        label.textContent = 'Error';
+      } finally {
+        isRefreshing = false;
+        btn.classList.remove('loading');
+        label.textContent = 'Refresh Now';
+      }
     }
 
-    async function fetchLiveData() {
+    async function fetchDataFromWebhook() {
       try {
-        console.log('[FETCH] Getting live data from /api/fetch-sheets');
-        const response = await fetch(FETCH_SHEETS_URL, {
+        console.log('[WEBHOOK] Fetching from', WEBHOOK_URL);
+        const response = await fetch(WEBHOOK_URL, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -104,34 +129,55 @@
         });
         
         if (!response.ok) {
-          console.log('[FETCH] HTTP', response.status);
           throw new Error(`HTTP ${response.status}`);
         }
         
         const result = await response.json();
-        console.log('[FETCH] Response:', result);
+        console.log('[WEBHOOK] Response:', result);
         
         if (result.success && result.data) {
-          console.log('[FETCH] Got live data from Google Sheets');
+          const hasAgents = result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1;
+          const hasJobs = result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1;
           
-          dataSource = 'live';
-          agents = result.data.agents || [];
-          cronJobs = result.data.jobs || [];
-          
-          console.log('[FETCH] Parsed:', {
-            agents: agents.length,
-            jobs: cronJobs.length,
-          });
-          
-          lastUpdated = new Date(result.timestamp || Date.now()).toLocaleTimeString();
-          showDashboard();
-          return;
+          if (hasAgents || hasJobs) {
+            dataSource = 'live';
+            
+            if (hasAgents) {
+              agents = result.data.agents.slice(1).map(row => ({
+                id: row[0] || '',
+                name: row[1] || '',
+                icon: row[2] || '',
+                version: row[3] || '',
+                status: row[4] || 'unknown',
+                nextSchedule: row[5] || '',
+                lastRun: row[6] || '',
+                description: row[7] || ''
+              })).filter(a => a && a.name);
+            }
+            
+            if (hasJobs) {
+              cronJobs = result.data.jobs.slice(1).map(row => ({
+                id: row[0] || '',
+                name: row[1] || '',
+                icon: row[2] || '',
+                schedule: row[3] || '',
+                nextRun: row[4] || '',
+                lastRun: row[5] || '',
+                duration: row[6] || '',
+                status: row[7] || 'unknown'
+              })).filter(j => j && j.name);
+            }
+            
+            lastUpdated = new Date(result.timestamp || Date.now()).toLocaleTimeString();
+            showDashboard();
+            return;
+          }
         }
       } catch (err) {
-        console.error('[FETCH] Error:', err.message);
+        console.error('[WEBHOOK] Error:', err.message);
       }
       
-      console.log('[FALLBACK] Using mock data');
+      // Fallback to mock
       dataSource = 'mock';
       agents = getMockAgents();
       cronJobs = getMockCronJobs();
@@ -141,13 +187,12 @@
     function getMockAgents() {
       return [
         { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-28T08:00:00Z', description: 'Personal performance coach' },
-        { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-27T10:00:00Z', description: 'Executive analytics' },
       ];
     }
 
     function getMockCronJobs() {
       return [
-        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-29T13:00:00Z', lastRun: '2026-03-28T12:00:00Z', duration: '19.2s', status: 'success' },
+        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily 18:00', nextRun: '2026-03-29T13:00:00Z', lastRun: '2026-03-28T12:00:00Z', duration: '19.2s', status: 'success' },
       ];
     }
 
@@ -163,21 +208,21 @@
 
     function showDashboard() {
       const dataStatusClass = dataSource === 'live' ? 'success' : 'warning';
-      const dataStatusText = dataSource === 'live' ? '✅ LIVE DATA (from Google Sheets)' : '⚠️ DEMO DATA (waiting for Google Sheets sync)';
+      const dataStatusText = dataSource === 'live' ? '✅ LIVE DATA (from Google Sheets)' : '⚠️ DEMO DATA';
       const statusBar = `<div class="data-status ${dataStatusClass}">${dataStatusText}</div>`;
       
-      const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.length > 0 ? agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding: 20px;">No agents loaded</td></tr>'}</tbody></table>`;
-      const cronTabContent = `<table><thead><tr><th>Job</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>${cronJobs.length > 0 ? cronJobs.map(j => `<tr><td>${j.icon} ${j.name}</td><td>${j.schedule}</td><td>${formatDate(j.nextRun)}</td><td>${formatDate(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center; padding: 20px;">No jobs loaded</td></tr>'}</tbody></table>`;
+      const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.length > 0 ? agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding: 20px;">No agents</td></tr>'}</tbody></table>`;
+      const cronTabContent = `<table><thead><tr><th>Job</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>${cronJobs.length > 0 ? cronJobs.map(j => `<tr><td>${j.icon} ${j.name}</td><td>${j.schedule}</td><td>${formatDate(j.nextRun)}</td><td>${formatDate(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center; padding: 20px;">No jobs</td></tr>'}</tbody></table>`;
       
       const tabButtons = `<div style="margin-bottom: 20px;"><button class="tab-btn ${activeTab === 'agents' ? 'active' : ''}" onclick="switchTab('agents')" style="font-size: 0.95rem; font-weight: 600;">⚡ Agents (${agents.length})</button><button class="tab-btn ${activeTab === 'crons' ? 'active' : ''}" onclick="switchTab('crons')" style="font-size: 0.95rem; font-weight: 600;">🕐 Jobs (${cronJobs.length})</button></div>`;
       
-      document.getElementById('main').innerHTML = statusBar + tabButtons + (activeTab === 'agents' ? agentTabContent : cronTabContent) + `<div class="last-updated">Last updated: ${lastUpdated} | Version: ${APP_VERSION} | Data: ${dataSource}</div>`;
+      document.getElementById('main').innerHTML = statusBar + tabButtons + (activeTab === 'agents' ? agentTabContent : cronTabContent) + `<div class="last-updated">Last updated: ${lastUpdated} | Version: ${APP_VERSION}</div>`;
     }
 
+    // On login: trigger refresh to fetch current data
     if (localStorage.getItem('dashboardLoggedIn')) {
       isLoggedIn = true;
-      // Fetch live data immediately on login
-      fetchLiveData();
+      triggerDashboardRefresh();
     } else {
       document.getElementById('main').innerHTML = `<div class="login-form" style="max-width: 300px; margin: 50px auto; padding: 30px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 8px;"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: #e0e0e0;"><button type="submit" style="width: 100%; padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600;">Log In</button></form><div id="loginError" class="error" style="display: none; color: #f44336; margin-top: 10px; text-align: center;"></div></div>`;
     }
@@ -188,8 +233,7 @@
       if (password === 'admin') {
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
-        // Fetch live data immediately after login
-        fetchLiveData();
+        triggerDashboardRefresh();
       } else {
         document.getElementById('loginError').textContent = '❌ Invalid credentials';
         document.getElementById('loginError').style.display = 'block';
