@@ -7,6 +7,49 @@ let lastSheetData: any = null;
 let lastSheetTime: string = '';
 
 // ============================================
+// Convert Google Sheets array format to dashboard format
+// GAS returns: {agents: [[...]], jobs: [[...]], calendars: [[...]]}
+// Dashboard needs: {agents: [{values: [...]}], ...}
+// ============================================
+function convertGASDataToDashboardFormat(gasData: any) {
+  console.log('🔄 Converting GAS data to dashboard format');
+  
+  const converted: any = {};
+  
+  // Convert agents
+  if (gasData.agents && Array.isArray(gasData.agents)) {
+    converted.agents = gasData.agents.map((row: any[]) => ({
+      values: row.map(val => ({
+        formattedValue: val === null || val === undefined ? '' : String(val)
+      }))
+    }));
+    console.log(`  ✅ Agents: ${converted.agents.length} rows`);
+  }
+  
+  // Convert jobs
+  if (gasData.jobs && Array.isArray(gasData.jobs)) {
+    converted.jobs = gasData.jobs.map((row: any[]) => ({
+      values: row.map(val => ({
+        formattedValue: val === null || val === undefined ? '' : String(val)
+      }))
+    }));
+    console.log(`  ✅ Jobs: ${converted.jobs.length} rows`);
+  }
+  
+  // Convert calendars
+  if (gasData.calendars && Array.isArray(gasData.calendars)) {
+    converted.calendars = gasData.calendars.map((row: any[]) => ({
+      values: row.map(val => ({
+        formattedValue: val === null || val === undefined ? '' : String(val)
+      }))
+    }));
+    console.log(`  ✅ Calendars: ${converted.calendars.length} rows`);
+  }
+  
+  return converted;
+}
+
+// ============================================
 // POST - Receive data from Google Apps Script
 // ============================================
 export async function POST(request: Request) {
@@ -44,7 +87,7 @@ export async function POST(request: Request) {
 // GET - Fetch fresh data from Google Apps Script
 // ============================================
 export async function GET() {
-  console.log('📊 Sheet data GET requested - fetching from Google Apps Script');
+  console.log('📋 Sheet data GET requested - fetching from Google Apps Script');
   
   try {
     // Call Google Apps Script to get fresh data
@@ -67,37 +110,62 @@ export async function GET() {
     }
     
     const gasResponse = await response.text();
-    console.log('   GAS Response:', gasResponse.substring(0, 200));
+    console.log('   GAS Response length:', gasResponse.length);
+    console.log('   GAS Response preview:', gasResponse.substring(0, 300));
     
-    // Parse the response (it's HTML from doPost)
+    // Parse the response - it should be JSON
     let gasData;
     try {
-      // Try to extract JSON from HTML response
-      const jsonMatch = gasResponse.match(/\{[^}]*\}/);
-      gasData = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+      // First try direct JSON parse
+      gasData = JSON.parse(gasResponse);
+      console.log('   ✅ Parsed as JSON');
     } catch (e) {
-      console.error('   Could not parse GAS response as JSON');
-      gasData = null;
+      console.log('   Trying to extract JSON from HTML...');
+      // Try to extract JSON from HTML response
+      const jsonMatch = gasResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        gasData = JSON.parse(jsonMatch[0]);
+        console.log('   ✅ Extracted JSON from HTML');
+      } else {
+        throw new Error('Could not find JSON in GAS response');
+      }
     }
     
+    console.log('   Parsed GAS data keys:', Object.keys(gasData || {}));
+    
     if (gasData && gasData.data) {
-      console.log('✅ Got fresh data from GAS:');
-      console.log('   - Agents:', gasData.data.agents?.length || 0, 'rows');
-      console.log('   - Jobs:', gasData.data.jobs?.length || 0, 'rows');
-      console.log('   - Calendars:', gasData.data.calendars?.length || 0, 'rows');
+      console.log('✅ Got fresh data from GAS');
       
-      // Convert raw array format to dashboard format
+      // Convert to dashboard format
+      const dashboardFormat = convertGASDataToDashboardFormat(gasData.data);
+      
+      console.log('✅ Converted to dashboard format:');
+      console.log('   - Agents:', dashboardFormat.agents?.length || 0);
+      console.log('   - Jobs:', dashboardFormat.jobs?.length || 0);
+      console.log('   - Calendars:', dashboardFormat.calendars?.length || 0);
+      
       return NextResponse.json({
         success: true,
-        timestamp: gasData.data.timestamp,
+        timestamp: gasData.data.timestamp || new Date().toISOString(),
         source: 'google_apps_script_live',
-        data: {
-          agents: gasData.data.agents || [],
-          jobs: gasData.data.jobs || [],
-          calendars: gasData.data.calendars || []
-        }
+        data: dashboardFormat
       }, { status: 200 });
     } else {
+      console.log('⚠️  GAS response missing data field, structure:', Object.keys(gasData || {}));
+      
+      // Maybe the entire response IS the data?
+      if (gasData && (gasData.agents || gasData.jobs || gasData.calendars)) {
+        console.log('✅ GAS response appears to be data directly');
+        const dashboardFormat = convertGASDataToDashboardFormat(gasData);
+        
+        return NextResponse.json({
+          success: true,
+          timestamp: new Date().toISOString(),
+          source: 'google_apps_script_live',
+          data: dashboardFormat
+        }, { status: 200 });
+      }
+      
       // Fall back to stored data if GAS response is invalid
       console.log('⚠️  GAS response invalid, using stored data');
       
