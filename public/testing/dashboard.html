@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center - Testing Dashboard v1.0.24</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🤖</text></svg>">
+  <title>Agent Command Center - v1.0.25</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #d1d5db; padding: 20px; min-height: 100vh; }
@@ -59,8 +60,8 @@
     <div class="container">
       <header>
         <div>
-          <h1>🎯 Agent Command Center</h1>
-          <p class="subtitle">Real-time monitoring • v1.0.24</p>
+          <h1>🤖 Agent Command Center</h1>
+          <p class="subtitle">Real-time monitoring • v1.0.25</p>
         </div>
         <div class="header-buttons">
           <button class="btn-refresh" id="refreshBtn">🔄 Refresh</button>
@@ -230,7 +231,10 @@
                 };
               }
             })
-            .filter((a, idx) => idx > 0 || (a.name !== 'Name' && a.name !== 'ID'));
+            .filter((a, idx) => {
+              if (idx === 0 && (a.name === 'Name' || a.name === 'ID')) return false;
+              return true;
+            });
           
           cronJobs = jobsList
             .map((row, idx) => {
@@ -258,7 +262,10 @@
                 };
               }
             })
-            .filter((j, idx) => idx > 0 || (j.name !== 'Name' && j.name !== 'ID'));
+            .filter((j, idx) => {
+              if (idx === 0 && (j.name === 'Name' || j.name === 'Icon Job Name' || j.name === 'ID')) return false;
+              return true;
+            });
           
           calendars = calendarsList
             .map((row, idx) => {
@@ -278,7 +285,10 @@
                 };
               }
             })
-            .filter((c, idx) => idx > 0 || (c.name !== 'Calendar' && c.name !== 'ID'));
+            .filter((c, idx) => {
+              if (idx === 0 && (c.name === 'Calendar' || c.name === 'Display Name' || c.name === 'ID')) return false;
+              return true;
+            });
           
           console.log('[FETCH] ✅ Processed - agents:', agents.length, 'jobs:', cronJobs.length, 'calendars:', calendars.length);
           statusEl.textContent = '✅ Data refreshed: ' + agents.length + ' agents, ' + cronJobs.length + ' jobs';
@@ -343,7 +353,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', function() {
-      console.log('[INIT] Dashboard initialized v1.0.24');
+      console.log('[INIT] Dashboard initialized v1.0.25');
       const refreshBtn = document.getElementById('refreshBtn');
       if (refreshBtn) {
         refreshBtn.addEventListener('click', function(e) {
