@@ -84,11 +84,11 @@ function sendAllDataNow() {
 }
 
 // ============================================
-// ON EDIT TRIGGER - Simple trigger (has spreadsheet permission)
+// ON EDIT TRIGGER - Installable trigger (full permissions)
 // ============================================
-function onEdit(e) {
+function onEditHandler(e) {
   if (!e || !e.source) {
-    Logger.log('❌ onEdit: No event or source');
+    Logger.log('❌ onEditHandler: No event or source');
     return;
   }
   
@@ -190,6 +190,36 @@ function getSheetDataForWebhook() {
     Logger.log(`❌ Error fetching sheet data: ${error.toString()}`);
     return { error: error.toString() };
   }
+}
+
+// ============================================
+// SETUP TRIGGER - Run ONCE to install installable trigger
+// ============================================
+function setupTrigger() {
+  Logger.log('⚙️ Setting up installable onEdit trigger...');
+  
+  // Remove existing triggers
+  const triggers = ScriptApp.getProjectTriggers();
+  let removed = 0;
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'onEditHandler' || trigger.getHandlerFunction() === 'onEdit') {
+      ScriptApp.deleteTrigger(trigger);
+      removed++;
+      Logger.log(`Removed old trigger: ${trigger.getHandlerFunction()}`);
+    }
+  });
+  
+  Logger.log(`Removed ${removed} old triggers`);
+  
+  // Create NEW installable trigger with full permissions
+  ScriptApp.newTrigger('onEditHandler')
+    .forSpreadsheet(SpreadsheetApp.openById(SPREADSHEET_ID))
+    .onEdit()
+    .create();
+  
+  Logger.log('✅ Installable trigger created for onEditHandler - will have full permissions');
+  Logger.log('   You can now edit cells and the webhook will be triggered');
+  Logger.log('   Check logs for activity');
 }
 
 // ============================================
