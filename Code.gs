@@ -109,7 +109,7 @@ function onEditHandler(e) {
   Logger.log(`   Value: ${editRange.getValue()}`);
   Logger.log(`   Editor: ${editor}`);
   
-  // Get the data directly from sheet (onEdit has sheet permission)
+  // Get the data directly from sheet
   Logger.log(`📊 Gathering data to send...`);
   const data = getSheetDataForWebhook();
   
