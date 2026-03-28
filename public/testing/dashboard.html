@@ -3,118 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center - Testing Dashboard v1.0.17</title>
+  <title>Agent Command Center - Testing Dashboard v1.0.18</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Inter', sans-serif; 
-      background-color: #0a0a0a; 
-      background-image: radial-gradient(circle at 20% 50%, rgba(33, 150, 243, 0.1), transparent), radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.05), transparent); 
-      color: #e0e0e0; 
-      padding: 20px; 
-    }
-    .container { max-width: 1200px; margin: 0 auto; }
-    header { 
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #333;
-    }
-    .header-left { text-align: left; }
-    h1 { color: #2196f3; font-size: 2.5em; margin-bottom: 10px; }
-    .subtitle { color: #90caf9; font-size: 1.1em; }
-    .header-right { display: flex; gap: 15px; align-items: center; }
-    .refresh-btn { 
-      padding: 10px 20px; 
-      background: #2196f3; 
-      color: white; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      font-weight: 600;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      transition: all 0.3s;
-    }
-    .refresh-btn:hover { background: #1976d2; opacity: 0.9; }
-    .logout-btn { 
-      padding: 10px 15px; 
-      background: #ef4444; 
-      color: white; 
-      border: none; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      font-weight: 600;
-      transition: all 0.3s;
-    }
-    .logout-btn:hover { background: #dc2626; opacity: 0.9; }
-    .tabs { display: flex; gap: 10px; margin: 30px 0; border-bottom: 2px solid #333; }
-    .tab-btn { padding: 10px 20px; background: none; border: none; color: #90caf9; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; transition: all 0.3s; }
-    .tab-btn.active { color: #2196f3; border-bottom-color: #2196f3; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    table { width: 100%; border-collapse: collapse; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; margin: 20px 0; }
-    thead { background: rgba(33, 150, 243, 0.1); }
-    th { padding: 12px; text-align: left; color: #2196f3; font-weight: 600; border-bottom: 2px solid #333; }
-    td { padding: 10px 12px; border-bottom: 1px solid #333; }
-    tr:hover { background: rgba(33, 150, 243, 0.05); }
-    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
-    .status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-    .status-idle { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
-    .status-success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-    .status-error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
-    .loading { text-align: center; color: #90caf9; padding: 20px; }
-    .last-updated { text-align: right; color: #666; font-size: 0.9em; margin-top: 10px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    .calendar-card { 
-      background: rgba(20, 20, 30, 0.8); 
-      border: 1px solid #333; 
-      border-radius: 4px; 
-      padding: 20px;
-      transition: all 0.3s;
-    }
-    .calendar-card:hover { background: rgba(33, 150, 243, 0.05); }
-    .calendar-name { color: #2196f3; font-weight: 600; margin-bottom: 10px; }
-    .calendar-desc { color: #90caf9; font-size: 0.9em; margin-bottom: 10px; }
-    .calendar-access { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
-    .access-writer { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-    .access-reader { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+    body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; background-image: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(63, 94, 251, 0.05) 0%, transparent 50%); color: #d1d5db; }
+    .glass-panel { background: rgba(20, 20, 25, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+    .status-pulse { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+    @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+    html, body { height: 100%; width: 100%; }
+    input:focus { border-color: #3b82f6; }
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+    .sort-btn { padding: 0.35rem 0.7rem; font-size: 0.7rem; font-weight: 600; border-radius: 0.25rem; border: 1px solid #475569; background-color: rgba(255, 255, 255, 0.02); color: #cbd5e1; cursor: pointer; transition: all 0.2s; }
+    .sort-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+    .sort-btn:hover { background-color: rgba(59, 130, 246, 0.2); }
   </style>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <div class="header-left">
-        <h1>🎯📊 Agent Command Center</h1>
-        <p class="subtitle">Real-time monitoring • v1.0.17</p>
-      </div>
-      <div class="header-right">
-        <button class="refresh-btn" onclick="fetchDataFromWebhook()">
-          <span>🔄</span> Refresh
-        </button>
-        <button class="logout-btn" onclick="handleLogout()">
-          🚪 Logout
-        </button>
-      </div>
-    </header>
-    <main id="main"></main>
-  </div>
-
+<body class="bg-black text-gray-300">
+  <div id="app"></div>
   <script>
-    const WEBHOOK_URL = '/api/webhook';
-    const SPREADSHEET_ID = '1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk';
-    
     let isLoggedIn = false;
     let agents = [];
     let cronJobs = [];
     let calendars = [];
+    let searchQuery = '';
+    let agentSort = 'status';
+    let cronSort = 'next';
+    let expandedAgentId = null;
+    let expandedCronId = null;
     let activeTab = localStorage.getItem('dashboardTab') || 'agents';
-    const APP_VERSION = 'v1.0.17';
-    let lastUpdated = 'Never';
+    const APP_VERSION = 'v1.0.18';
+    const WEBHOOK_URL = '/api/webhook';
 
     function switchTab(tab) {
       activeTab = tab;
@@ -126,84 +46,75 @@
       try {
         console.log('[WEBHOOK] Fetching data from', WEBHOOK_URL);
         const response = await fetch(WEBHOOK_URL);
-        const result = await response.json();
+        console.log('[WEBHOOK] Response status:', response.status);
         
-        if (result.success && result.data) {
-          console.log('[WEBHOOK] Got data:', result);
-          
-          if (result.data.agents) {
-            agents = result.data.agents.slice(1).map(row => {
-              const vals = (row.values || []).map(v => v.formattedValue || '');
-              return { 
-                id: vals[0], 
-                name: vals[1], 
-                icon: vals[2], 
-                version: vals[3], 
-                status: vals[4], 
-                nextSchedule: vals[5], 
-                lastRun: vals[6], 
-                description: vals[7] 
-              };
-            }).filter(a => a.name);
-          }
-          
-          if (result.data.jobs) {
-            cronJobs = result.data.jobs.slice(1).map(row => {
-              const vals = (row.values || []).map(v => v.formattedValue || '');
-              return { 
-                id: vals[0], 
-                name: vals[1], 
-                icon: vals[2], 
-                schedule: vals[3], 
-                nextRun: vals[4], 
-                lastRun: vals[5], 
-                duration: vals[6], 
-                status: vals[7] 
-              };
-            }).filter(j => j.name);
-          }
-
-          if (result.data.calendars) {
-            calendars = result.data.calendars.slice(1).map(row => {
-              const vals = (row.values || []).map(v => v.formattedValue || '');
-              return { 
-                id: vals[0], 
-                name: vals[1], 
-                description: vals[2],
-                access: vals[3]
-              };
-            }).filter(c => c.name);
-          }
-          
-          lastUpdated = new Date().toLocaleTimeString();
-          showDashboard();
+        if (!response.ok) {
+          console.log('[WEBHOOK] Response not OK, falling back to mock data');
+          loadMockData();
           return;
         }
+        
+        const result = await response.json();
+        console.log('[WEBHOOK] Full response:', result);
+        
+        if (result.success && result.data) {
+          console.log('[WEBHOOK] Data retrieved successfully');
+          
+          if (result.data.agents && Array.isArray(result.data.agents)) {
+            agents = result.data.agents.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || v || '');
+              return { 
+                id: vals[0], name: vals[1], icon: vals[2], version: vals[3], 
+                status: vals[4], nextSchedule: vals[5], lastRun: vals[6], description: vals[7] 
+              };
+            }).filter(a => a.name);
+            console.log('[WEBHOOK] Loaded', agents.length, 'agents');
+          }
+          
+          if (result.data.jobs && Array.isArray(result.data.jobs)) {
+            cronJobs = result.data.jobs.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || v || '');
+              return { 
+                id: vals[0], name: vals[1], icon: vals[2], schedule: vals[3], 
+                nextRun: vals[4], lastRun: vals[5], duration: vals[6], status: vals[7] 
+              };
+            }).filter(j => j.name);
+            console.log('[WEBHOOK] Loaded', cronJobs.length, 'jobs');
+          }
+
+          if (result.data.calendars && Array.isArray(result.data.calendars)) {
+            calendars = result.data.calendars.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || v || '');
+              return { id: vals[0], name: vals[1], description: vals[2], access: vals[3] };
+            }).filter(c => c.name);
+            console.log('[WEBHOOK] Loaded', calendars.length, 'calendars');
+          }
+        } else {
+          console.log('[WEBHOOK] No success flag or data in response, using mock');
+          loadMockData();
+          return;
+        }
+        
+        if (isLoggedIn) showDashboard();
       } catch (err) {
-        console.log('[WEBHOOK] Error or not available:', err.message);
+        console.error('[WEBHOOK] Fetch error:', err);
+        console.log('[FALLBACK] Using mock data due to error');
+        loadMockData();
+        if (isLoggedIn) showDashboard();
       }
-      
-      console.log('[FALLBACK] Using mock data');
-      agents = getMockAgents();
-      cronJobs = getMockCronJobs();
-      calendars = getMockCalendars();
-      showDashboard();
     }
 
-    function getMockAgents() {
-      return [
-        { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-27T08:00:00Z', description: 'Personal performance coach' },
-        { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-26T10:00:00Z', description: 'Executive analytics' },
-        { id: '3', name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-04-05T18:00:00Z', lastRun: '2026-03-22T18:00:00Z', description: 'Weekly calendar briefing' },
-        { id: '4', name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-30T18:00:00Z', lastRun: '2026-03-29T08:00:00Z', description: 'Daily calendar monitoring' },
-        { id: '5', name: 'Research Scout', icon: '🔍', version: 'Daily', status: 'active', nextSchedule: '2026-03-29T16:00:00Z', lastRun: '2026-03-29T13:00:00Z', description: 'Web research and intelligence' },
-        { id: '6', name: 'Bouncer Agent', icon: '🚪', version: 'Daily', status: 'active', nextSchedule: '2026-03-30T01:00:00Z', lastRun: '2026-03-29T01:00:00Z', description: 'Security audit' },
+    function loadMockData() {
+      agents = [
+        { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'running', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-27T08:00:00Z', description: 'Personal performance coach' },
+        { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'scheduled', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-26T10:00:00Z', description: 'Executive analytics' },
+        { id: '3', name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', status: 'scheduled', nextSchedule: '2026-04-05T18:00:00Z', lastRun: '2026-03-22T18:00:00Z', description: 'Weekly calendar briefing' },
+        { id: '4', name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', status: 'running', nextSchedule: '2026-03-30T18:00:00Z', lastRun: '2026-03-29T08:00:00Z', description: 'Daily calendar monitoring' },
+        { id: '5', name: 'Research Scout', icon: '🔍', version: 'v1.0', status: 'running', nextSchedule: '2026-03-29T16:00:00Z', lastRun: '2026-03-29T13:00:00Z', description: 'Web research and intelligence' },
+        { id: '6', name: 'Bouncer Agent', icon: '🚪', version: 'v1.0', status: 'scheduled', nextSchedule: '2026-03-30T01:00:00Z', lastRun: '2026-03-29T01:00:00Z', description: 'Security audit' },
         { id: '7', name: 'Job Application Agent', icon: '💼', version: 'v2.0', status: 'idle', nextSchedule: '', lastRun: '2026-03-20T14:30:00Z', description: 'Job applications' }
       ];
-    }
-
-    function getMockCronJobs() {
-      return [
+      cronJobs = [
         { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '19.2s', status: 'success' },
         { id: '2', name: 'Research Scout Hunt #1', icon: '🔍', schedule: 'Daily 08:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '27.7s', status: 'success' },
         { id: '3', name: 'Research Scout Hunt #2', icon: '🔍', schedule: 'Daily 16:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T13:24:50Z', duration: '11.4s', status: 'success' },
@@ -213,10 +124,7 @@
         { id: '7', name: 'Healthcheck Security Audit', icon: '⚠️', schedule: 'Daily 02:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '12.4s', status: 'error' },
         { id: '8', name: 'Cami Weekly Briefing', icon: '📅', schedule: 'Sunday 18:00', nextRun: '2026-04-05T20:00:00Z', lastRun: '2026-03-22T19:00:09Z', duration: '16.9s', status: 'success' }
       ];
-    }
-
-    function getMockCalendars() {
-      return [
+      calendars = [
         { id: '1', name: 'FLCAL - Allgemein', description: 'General FleetLink scheduling', access: 'Writer' },
         { id: '2', name: 'FLCAL - MO / Externe Termine', description: 'External/client meetings', access: 'Writer' },
         { id: '3', name: 'FLCAL - Vertriebstermine', description: 'Sales/business development', access: 'Writer' },
@@ -224,58 +132,122 @@
         { id: '5', name: 'FLCAL - Urlaub / krank', description: 'Vacation/sick reference', access: 'Reader' },
         { id: '6', name: "Wife's iCloud", description: 'Family calendar (read-only)', access: 'Reader' }
       ];
+      console.log('[FALLBACK] Loaded mock data');
     }
 
-    function formatDate(isoString) {
-      if (!isoString) return 'N/A';
+    function getCurrentTimeZone() {
+      const now = new Date();
+      const berlinTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+      const utcTime = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const offsetMs = berlinTime - utcTime;
+      const offsetHours = Math.floor(Math.abs(offsetMs) / (1000 * 60 * 60));
+      const offsetMins = Math.floor((Math.abs(offsetMs) % (1000 * 60 * 60)) / (1000 * 60));
+      const offsetSign = offsetMs >= 0 ? '+' : '-';
+      const offset = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+      const hours = String(berlinTime.getHours()).padStart(2, '0');
+      const minutes = String(berlinTime.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes} CET/CEST (${offset})`;
+    }
+
+    function formatTimeGerman(isoString) {
       const date = new Date(isoString);
-      return date.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
     }
 
-    function showDashboard() {
-      const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('')}</tbody></table>`;
-      
-      const cronTabContent = `<table><thead><tr><th>Job</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>${cronJobs.map(j => `<tr><td>${j.icon} ${j.name}</td><td>${j.schedule}</td><td>${formatDate(j.nextRun)}</td><td>${formatDate(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('')}</tbody></table>`;
-      
-      const calendarTabContent = `<div class="calendar-grid">${calendars.map(c => `<div class="calendar-card"><div class="calendar-name">${c.name}</div><div class="calendar-desc">${c.description}</div><div class="calendar-access access-${c.access.toLowerCase()}">${c.access}</div></div>`).join('')}</div>`;
-      
-      document.getElementById('main').innerHTML = `
-        <div class="tabs">
-          <button class="tab-btn ${activeTab === 'agents' ? 'active' : ''}" onclick="switchTab('agents')">⚡ Agents</button>
-          <button class="tab-btn ${activeTab === 'crons' ? 'active' : ''}" onclick="switchTab('crons')">🕐 Scheduled Jobs</button>
-          <button class="tab-btn ${activeTab === 'calendars' ? 'active' : ''}" onclick="switchTab('calendars')">📅 Calendars</button>
-        </div>
-        
-        ${activeTab === 'agents' ? agentTabContent : ''}
-        ${activeTab === 'crons' ? cronTabContent : ''}
-        ${activeTab === 'calendars' ? calendarTabContent : ''}
-        
-        <div class="last-updated">Last updated: ${lastUpdated}</div>
-      `;
+    function formatRelativeTime(isoString) {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    }
+
+    function getStatusColor(status) {
+      const colors = {'running': { bg: 'rgba(34, 197, 94, 0.1)', text: '#4ade80', dot: '#22c55e' }, 'scheduled': { bg: 'rgba(59, 130, 246, 0.1)', text: '#60a5fa', dot: '#3b82f6' }, 'idle': { bg: 'rgba(107, 114, 128, 0.1)', text: '#9ca3af', dot: '#6b7280' }, 'error': { bg: 'rgba(239, 68, 68, 0.1)', text: '#f87171', dot: '#ef4444' }};
+      return colors[status] || colors['idle'];
+    }
+
+    function sortAgents() {
+      if (agentSort === 'status') {
+        return [...agents].sort((a, b) => {
+          const statusOrder = { 'running': 0, 'scheduled': 1, 'idle': 2, 'error': 3 };
+          return (statusOrder[a.status] || 4) - (statusOrder[b.status] || 4);
+        });
+      } else if (agentSort === 'name') {
+        return [...agents].sort((a, b) => a.name.localeCompare(b.name));
+      } else if (agentSort === 'heartbeat') {
+        return [...agents].sort((a, b) => new Date(b.lastRun) - new Date(a.lastRun));
+      }
+      return agents;
+    }
+
+    function sortCrons() {
+      if (cronSort === 'next') {
+        return [...cronJobs].sort((a, b) => new Date(a.nextRun) - new Date(b.nextRun));
+      } else if (cronSort === 'name') {
+        return [...cronJobs].sort((a, b) => a.name.localeCompare(b.name));
+      } else if (cronSort === 'status') {
+        return [...cronJobs].sort((a, b) => a.status === 'success' ? -1 : 1);
+      }
+      return cronJobs;
+    }
+
+    function toggleAgent(agentId) {
+      expandedAgentId = expandedAgentId === agentId ? null : agentId;
+      showDashboard();
+    }
+
+    function toggleCron(cronId) {
+      expandedCronId = expandedCronId === cronId ? null : cronId;
+      showDashboard();
+    }
+
+    function buildAgentDetailsHtml(agent) {
+      return `<tr><td colspan="5" style="padding: 1.5rem; background-color: rgba(59, 130, 246, 0.05); border-top: 1px solid #1f2937;"><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;"><div><div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600;">📊 Agent Details</div><div style="display: flex; flex-direction: column; gap: 0.75rem;"><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Name:</span><span style="color: white; font-weight: 500;">${agent.name}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Status:</span><span style="color: white;">${agent.status}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Version:</span><span style="color: white;">${agent.version}</span></div></div></div><div><div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600;">⏰ Timing</div><div style="display: flex; flex-direction: column; gap: 0.75rem;"><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Last Run:</span><span style="color: white; font-family: 'JetBrains Mono';">${formatTimeGerman(agent.lastRun)}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Next Run:</span><span style="color: white; font-family: 'JetBrains Mono';">${agent.nextSchedule ? formatTimeGerman(agent.nextSchedule) : 'N/A'}</span></div></div></div></div></td></tr>`;
+    }
+
+    function buildCronDetailsHtml(job) {
+      return `<tr><td colspan="7" style="padding: 1.5rem; background-color: rgba(168, 85, 247, 0.05); border-top: 1px solid #1f2937;"><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;"><div><div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600;">📋 Job Details</div><div style="display: flex; flex-direction: column; gap: 0.75rem;"><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Name:</span><span style="color: white; font-weight: 500;">${job.name}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Schedule:</span><span style="color: white;">${job.schedule}</span></div></div></div><div><div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; margin-bottom: 1rem; font-weight: 600;">⏱️ Execution</div><div style="display: flex; flex-direction: column; gap: 0.75rem;"><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Next Run:</span><span style="color: white; font-family: 'JetBrains Mono';">${formatTimeGerman(job.nextRun)}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Last Run:</span><span style="color: white; font-family: 'JetBrains Mono';">${formatTimeGerman(job.lastRun)}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Duration:</span><span style="color: white;">${job.duration}</span></div><div style="display: flex; justify-content: space-between;"><span style="color: #9ca3af;">Status:</span><span style="color: white;">${job.status}</span></div></div></div></div></td></tr>`;
     }
 
     function showLogin() {
-      document.getElementById('main').innerHTML = `
-        <div style="max-width: 400px; margin: 50px auto; text-align: center;">
-          <h2 style="color: #2196f3; margin-bottom: 20px;">Dashboard Login</h2>
-          <form onsubmit="handleLogin(event)" style="display: flex; flex-direction: column; gap: 10px;">
-            <input 
-              type="password" 
-              id="passwordInput" 
-              placeholder="Enter password" 
-              required 
-              style="padding: 10px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-family: 'Inter', sans-serif;"
-            >
-            <button 
-              type="submit" 
-              style="padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600; transition: all 0.2s;"
-            >
-              Log In
-            </button>
-          </form>
-          <div id="loginError" style="display: none; color: #f44336; margin-top: 10px;"></div>
-        </div>
-      `;
+      const app = document.getElementById('app');
+      app.innerHTML = `<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.9); backdrop-filter: blur(4px);"><div class="glass-panel" style="border-radius: 1rem; padding: 2rem; width: 100%; max-width: 28rem; border-color: #1f2937;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;"><div style="width: 3rem; height: 3rem; background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;"><svg class="w-6 h-6" style="color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div></div><h1 style="font-size: 1.875rem; font-weight: bold; color: white; text-align: center; margin-bottom: 0.5rem;">Agent Command Center</h1><p style="font-size: 0.875rem; color: #9ca3af; text-align: center; margin-bottom: 1.5rem;">v1.0.18 • Secure Access Required</p><form onsubmit="handleLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;"><div><label style="display: block; font-size: 0.75rem; font-weight: 500; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Password</label><input type="password" id="passwordInput" style="width: 100%; background-color: rgba(0, 0, 0, 0.5); border: 1px solid #374151; border-radius: 0.5rem; padding: 0.75rem 1rem; color: white; font-size: 1rem; font-family: inherit; outline: none; transition: border-color 0.2s;" placeholder="••••••••" /></div><button type="submit" style="width: 100%; background-color: #2563eb; color: white; font-weight: 500; padding: 0.75rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; transition: all 0.2s; font-size: 1rem;">Access Dashboard</button></form><p id="loginError" style="color: #ef4444; font-size: 0.875rem; text-align: center; margin-top: 1rem; display: none;"></p></div></div>`;
+    }
+
+    function showDashboard() {
+      const app = document.getElementById('app');
+      const sortedAgents = sortAgents();
+      const sortedCrons = sortCrons();
+      const agentRows = sortedAgents.map(agent => {
+        const colors = getStatusColor(agent.status);
+        const isExpanded = expandedAgentId === agent.id;
+        return `<tr style="border-bottom: 1px solid #1f2937; cursor: pointer; background-color: ${isExpanded ? 'rgba(59, 130, 246, 0.05)' : 'transparent'};" onclick="toggleAgent('${agent.id}')" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05);" onmouseout="this.style.backgroundColor='${isExpanded ? 'rgba(59, 130, 246, 0.05)' : 'transparent'}'"><td style="padding: 1rem 1.5rem;"><div style="display: flex; align-items: flex-start; gap: 0.75rem;"><div style="font-size: 1.5rem; width: 2rem;">${agent.icon}</div><div><div style="color: white; font-weight: 500;">${agent.name}</div><div style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem;">${agent.description}</div></div><div style="color: #6b7280; margin-left: 1rem; font-size: 1.25rem; transition: transform 0.2s;">${isExpanded ? '▼' : '▶'}</div></div></td><td style="padding: 1rem 1.5rem;"><span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: ${colors.bg}; color: ${colors.text}; border: 1px solid ${colors.bg}; font-size: 0.75rem; font-weight: 500;"><span style="width: 1.5px; height: 1.5px; background-color: ${colors.dot}; border-radius: 9999px; ${agent.status === 'running' ? 'animation: pulse-ring 2s infinite;' : ''}"></span>${agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}</span></td><td style="padding: 1rem 1.5rem; color: #9ca3af; font-size: 0.875rem;">${agent.version}</td><td style="padding: 1rem 1.5rem; color: #9ca3af; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;">${formatRelativeTime(agent.lastRun)}</td></tr>${isExpanded ? buildAgentDetailsHtml(agent) : ''}`;
+      }).join('');
+      const cronRows = sortedCrons.map(job => {
+        const isExpanded = expandedCronId === job.id;
+        const statusColor = job.status === 'success' ? { bg: 'rgba(34, 197, 94, 0.1)', text: '#4ade80' } : { bg: 'rgba(239, 68, 68, 0.1)', text: '#f87171' };
+        return `<tr style="border-bottom: 1px solid #1f2937; cursor: pointer; background-color: ${isExpanded ? 'rgba(168, 85, 247, 0.05)' : 'transparent'};" onclick="toggleCron('${job.id}')" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05);" onmouseout="this.style.backgroundColor='${isExpanded ? 'rgba(168, 85, 247, 0.05)' : 'transparent'}'"><td style="padding: 1rem 1.5rem;"><div style="display: flex; align-items: flex-start; gap: 0.75rem;"><div style="font-size: 1.5rem; width: 2rem;">${job.icon}</div><div><div style="color: white; font-weight: 500;">${job.name}</div><div style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem;">${job.schedule}</div></div><div style="color: #6b7280; margin-left: 1rem; font-size: 1.25rem; transition: transform 0.2s;">${isExpanded ? '▼' : '▶'}</div></div></td><td style="padding: 1rem 1.5rem; color: #9ca3af; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;">${formatTimeGerman(job.nextRun)}</td><td style="padding: 1rem 1.5rem; color: #9ca3af; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem;">${formatTimeGerman(job.lastRun)}</td><td style="padding: 1rem 1.5rem; color: #9ca3af; font-size: 0.875rem;">${job.duration}</td><td style="padding: 1rem 1.5rem;"><span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: ${statusColor.bg}; color: ${statusColor.text}; font-size: 0.75rem; font-weight: 500;">${job.status === 'success' ? '✓' : '✗'} ${job.status}</span></td></tr>${isExpanded ? buildCronDetailsHtml(job) : ''}`;
+      }).join('');
+      const calendarRows = calendars.map(cal => {
+        const accessColor = cal.access === 'Writer' ? { bg: 'rgba(34, 197, 94, 0.1)', text: '#4ade80' } : { bg: 'rgba(107, 114, 128, 0.1)', text: '#9ca3af' };
+        return `<tr style="border-bottom: 1px solid #1f2937;"><td style="padding: 1rem 1.5rem;"><div style="color: white; font-weight: 500;">${cal.name}</div><div style="color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem;">${cal.description}</div></td><td style="padding: 1rem 1.5rem;"><span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; background-color: ${accessColor.bg}; color: ${accessColor.text}; font-size: 0.75rem; font-weight: 500;">${cal.access}</span></td></tr>`;
+      }).join('');
+      const agentTabContent = `<section class="glass-panel" style="border-radius: 0.75rem; overflow: hidden;"><div style="padding: 1rem 1.5rem; border-bottom: 1px solid #1f2937; display: flex; align-items: center; justify-content: space-between; background-color: rgba(255, 255, 255, 0.05);"><div style="display: flex; align-items: center; gap: 1rem;"><svg class="w-5 h-5" style="color: #60a5fa;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg><h2 style="font-size: 1.125rem; font-weight: 700; color: white; letter-spacing: -0.01em;">Active Agents</h2><span style="padding: 0.35rem 0.75rem; background-color: rgba(59, 130, 246, 0.1); color: #60a5fa; font-size: 0.8rem; font-weight: 600; border-radius: 9999px; border: 1px solid rgba(59, 130, 246, 0.2);">${agents.length} Total</span></div><div style="display: flex; align-items: center; gap: 0.5rem;"><div style="font-size: 0.75rem; color: #9ca3af;">SORT BY:</div><button onclick="agentSort='status'; showDashboard();" class="sort-btn ${agentSort === 'status' ? 'active' : ''}">Status</button><button onclick="agentSort='name'; showDashboard();" class="sort-btn ${agentSort === 'name' ? 'active' : ''}">Name</button><button onclick="agentSort='heartbeat'; showDashboard();" class="sort-btn ${agentSort === 'heartbeat' ? 'active' : ''}">Activity</button><button onclick="fetchDataFromWebhook()" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background-color: rgba(255, 255, 255, 0.05); border: 1px solid #374151; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; color: white; transition: all 0.2s; margin-left: 0.5rem;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.1);" onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.05);" ><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg><span>Refresh</span></button></div></div><div style="overflow-x: auto;"><table style="width: 100%; text-align: left; border-collapse: collapse;"><thead><tr style="font-size: 0.75rem; color: #6b7280; border-bottom: 1px solid #1f2937; background-color: rgba(0, 0, 0, 0.2);"><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Agent Name</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Version</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Last Activity</th></tr></thead><tbody>${agentRows || '<tr><td style="padding: 2rem 1.5rem; color: #6b7280; text-align: center;">No agents found</td></tr>'}</tbody></table></div></section>`;
+      const cronTabContent = `<section class="glass-panel" style="border-radius: 0.75rem; overflow: hidden;"><div style="padding: 1rem 1.5rem; border-bottom: 1px solid #1f2937; display: flex; align-items: center; justify-content: space-between; background-color: rgba(255, 255, 255, 0.05);"><div style="display: flex; align-items: center; gap: 1rem;"><svg class="w-5 h-5" style="color: #a78bfa;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><h2 style="font-size: 1.125rem; font-weight: 700; color: white; letter-spacing: -0.01em;">Scheduled Jobs</h2><span style="padding: 0.35rem 0.75rem; background-color: rgba(168, 85, 247, 0.1); color: #d8b4fe; font-size: 0.8rem; font-weight: 600; border-radius: 9999px; border: 1px solid rgba(168, 85, 247, 0.2);">${cronJobs.length} Jobs</span></div><div style="display: flex; align-items: center; gap: 0.5rem;"><div style="font-size: 0.75rem; color: #9ca3af;">SORT BY:</div><button onclick="cronSort='next'; showDashboard();" class="sort-btn ${cronSort === 'next' ? 'active' : ''}">Next Run</button><button onclick="cronSort='name'; showDashboard();" class="sort-btn ${cronSort === 'name' ? 'active' : ''}">Name</button><button onclick="cronSort='status'; showDashboard();" class="sort-btn ${cronSort === 'status' ? 'active' : ''}">Status</button></div></div><div style="overflow-x: auto;"><table style="width: 100%; text-align: left; border-collapse: collapse;"><thead><tr style="font-size: 0.75rem; color: #6b7280; border-bottom: 1px solid #1f2937; background-color: rgba(0, 0, 0, 0.2);"><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Job Name</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Next Run</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Last Run</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Duration</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Status</th></tr></thead><tbody>${cronRows || '<tr><td style="padding: 2rem 1.5rem; color: #6b7280; text-align: center;">No jobs found</td></tr>'}</tbody></table></div></section>`;
+      const calendarTabContent = `<section class="glass-panel" style="border-radius: 0.75rem; overflow: hidden;"><div style="padding: 1rem 1.5rem; border-bottom: 1px solid #1f2937; display: flex; align-items: center; gap: 1rem; background-color: rgba(255, 255, 255, 0.05);"><svg class="w-5 h-5" style="color: #fbbf24;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><h2 style="font-size: 1.125rem; font-weight: 700; color: white; letter-spacing: -0.01em;">Calendars</h2><span style="padding: 0.35rem 0.75rem; background-color: rgba(251, 191, 36, 0.1); color: #fbbf24; font-size: 0.8rem; font-weight: 600; border-radius: 9999px; border: 1px solid rgba(251, 191, 36, 0.2);">${calendars.length} Calendars</span></div><div style="overflow-x: auto;"><table style="width: 100%; text-align: left; border-collapse: collapse;"><thead><tr style="font-size: 0.75rem; color: #6b7280; border-bottom: 1px solid #1f2937; background-color: rgba(0, 0, 0, 0.2);"><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Calendar Name</th><th style="padding: 0.75rem 1.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Access Level</th></tr></thead><tbody>${calendarRows || '<tr><td style="padding: 2rem 1.5rem; color: #6b7280; text-align: center;">No calendars found</td></tr>'}</tbody></table></div></section>`;
+      app.innerHTML = `<div style="color: #d1d5db; min-height: 100vh; display: flex; flex-direction: column; background-color: #0a0a0a; background-image: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(63, 94, 251, 0.05) 0%, transparent 50%); font-family: 'Inter', sans-serif;"><header class="glass-panel" style="border-bottom: 1px solid #1f2937; position: sticky; top: 0; z-index: 40;"><div style="max-width: 1400px; margin-left: auto; margin-right: auto; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;"><div style="display: flex; align-items: center; gap: 1rem;"><div style="width: 2.5rem; height: 2.5rem; background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.2);"><svg class="w-5 h-5" style="color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg></div><div><h1 style="font-size: 1.25rem; font-weight: 700; color: white; letter-spacing: -0.025em;">Agent Command Center</h1><div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #6b7280;"><span class="status-pulse" style="width: 0.5rem; height: 0.5rem; background-color: #22c55e; border-radius: 9999px;"></span><span>System Online • ${APP_VERSION}</span></div></div></div><div style="display: flex; align-items: center; gap: 1.5rem;"><div style="text-align: right;"><div style="font-size: 0.75rem; color: #6b7280;">TIMEZONE</div><div style="font-size: 0.95rem; font-weight: 600; color: white; font-family: 'JetBrains Mono', monospace;">${getCurrentTimeZone()}</div></div><button onclick="handleLogout()" style="padding: 0.5rem; background-color: transparent; border: none; border-radius: 0.5rem; cursor: pointer; color: #9ca3af; transition: all 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.05)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#9ca3af';"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button></div></div></header><main style="flex: 1; max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%;"><div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid #1f2937; padding-bottom: 0;"><button onclick="switchTab('agents')" style="padding: 0.75rem 1.5rem; background-color: ${activeTab === 'agents' ? '#3b82f6' : 'transparent'}; color: ${activeTab === 'agents' ? 'white' : '#9ca3af'}; border: none; border-bottom: ${activeTab === 'agents' ? '2px solid #3b82f6' : 'none'}; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; position: relative; top: 1px;">⚡ Active Agents</button><button onclick="switchTab('crons')" style="padding: 0.75rem 1.5rem; background-color: ${activeTab === 'crons' ? '#3b82f6' : 'transparent'}; color: ${activeTab === 'crons' ? 'white' : '#9ca3af'}; border: none; border-bottom: ${activeTab === 'crons' ? '2px solid #3b82f6' : 'none'}; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; position: relative; top: 1px;">⏰ Scheduled Jobs</button><button onclick="switchTab('calendars')" style="padding: 0.75rem 1.5rem; background-color: ${activeTab === 'calendars' ? '#3b82f6' : 'transparent'}; color: ${activeTab === 'calendars' ? 'white' : '#9ca3af'}; border: none; border-bottom: ${activeTab === 'calendars' ? '2px solid #3b82f6' : 'none'}; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; position: relative; top: 1px;">📅 Calendars</button></div>${activeTab === 'agents' ? agentTabContent : activeTab === 'crons' ? cronTabContent : calendarTabContent}</main></div>`;
     }
 
     function handleLogin(e) {
@@ -285,9 +257,6 @@
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
         fetchDataFromWebhook();
-        setInterval(() => {
-          if (isLoggedIn) fetchDataFromWebhook();
-        }, 5000);
       } else {
         document.getElementById('loginError').textContent = 'Invalid credentials';
         document.getElementById('loginError').style.display = 'block';
@@ -303,9 +272,6 @@
     if (localStorage.getItem('dashboardLoggedIn')) {
       isLoggedIn = true;
       fetchDataFromWebhook();
-      setInterval(() => {
-        if (isLoggedIn) fetchDataFromWebhook();
-      }, 5000);
     } else {
       showLogin();
     }
