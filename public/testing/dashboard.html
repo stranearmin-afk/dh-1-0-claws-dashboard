@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🤖</text></svg>">
-  <title>Agent Command Center - v1.0.25</title>
+  <title>Agent Command Center - v1.0.26</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #d1d5db; padding: 20px; min-height: 100vh; }
@@ -61,7 +61,7 @@
       <header>
         <div>
           <h1>🤖 Agent Command Center</h1>
-          <p class="subtitle">Real-time monitoring • v1.0.25</p>
+          <p class="subtitle">Real-time monitoring • v1.0.26</p>
         </div>
         <div class="header-buttons">
           <button class="btn-refresh" id="refreshBtn">🔄 Refresh</button>
@@ -207,6 +207,7 @@
           
           console.log('[FETCH] Raw data - agents:', agentsList.length, 'jobs:', jobsList.length, 'calendars:', calendarsList.length);
           
+          // AGENTS: Skip header row
           agents = agentsList
             .map((row, idx) => {
               if (Array.isArray(row)) {
@@ -231,11 +232,14 @@
                 };
               }
             })
-            .filter((a, idx) => {
-              if (idx === 0 && (a.name === 'Name' || a.name === 'ID')) return false;
+            .filter((a) => {
+              // Skip header row: check if name contains column header keywords
+              const nameStr = (a.name || '').toLowerCase();
+              if (nameStr.includes('name') || nameStr.includes('id') || nameStr === '') return false;
               return true;
             });
           
+          // JOBS: Skip header row (has 'Icon', 'Schedule', 'Job Name' etc)
           cronJobs = jobsList
             .map((row, idx) => {
               if (Array.isArray(row)) {
@@ -262,11 +266,16 @@
                 };
               }
             })
-            .filter((j, idx) => {
-              if (idx === 0 && (j.name === 'Name' || j.name === 'Icon Job Name' || j.name === 'ID')) return false;
+            .filter((j) => {
+              // Skip if name contains column header keywords OR if duration has NaN (sign of header)
+              const nameStr = (j.name || '').toLowerCase();
+              const durationStr = (j.duration || '').toLowerCase();
+              if (nameStr.includes('name') || nameStr.includes('icon') || nameStr.includes('schedule') || nameStr === '') return false;
+              if (durationStr.includes('nan')) return false; // Skip rows with NaN in duration
               return true;
             });
           
+          // CALENDARS: Skip header row
           calendars = calendarsList
             .map((row, idx) => {
               if (Array.isArray(row)) {
@@ -285,8 +294,10 @@
                 };
               }
             })
-            .filter((c, idx) => {
-              if (idx === 0 && (c.name === 'Calendar' || c.name === 'Display Name' || c.name === 'ID')) return false;
+            .filter((c) => {
+              // Skip header row
+              const nameStr = (c.name || '').toLowerCase();
+              if (nameStr.includes('calendar') || nameStr.includes('display') || nameStr.includes('id') || nameStr === '') return false;
               return true;
             });
           
@@ -353,7 +364,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', function() {
-      console.log('[INIT] Dashboard initialized v1.0.25');
+      console.log('[INIT] Dashboard initialized v1.0.26');
       const refreshBtn = document.getElementById('refreshBtn');
       if (refreshBtn) {
         refreshBtn.addEventListener('click', function(e) {
