@@ -1,68 +1,60 @@
 import { NextResponse } from 'next/server';
 
-// This endpoint fetches data directly from Google Sheets via Composio
-// Called when user clicks "Refresh Now" on the dashboard
+// This endpoint receives sheet data pushed by Google Apps Script webhook
+// Google Apps Script onEdit trigger POSTs data here when cells are edited
+// Dashboard GETs data from here to display live updates
 
-export async function GET() {
+let lastSheetData: any = null;
+let lastSheetTime: string = '';
+
+export async function POST(request: Request) {
   try {
-    console.log('📊 Sheets GET requested - fetching from Google Sheets via Composio');
-
-    // Call Composio API to fetch Google Sheets data
-    // We'll use the proxy to call Composio's Google Sheets integration
-    const composioResponse = await fetch('https://api.composio.dev/api/v1/client/apps/googlesheets/actions/get_spreadsheet_values', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.COMPOSIO_API_KEY}`
-      },
-      body: JSON.stringify({
-        spreadsheetId: '1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk',
-        ranges: ['Agents', 'Cron Jobs', 'Calendars']
-      })
-    });
-
-    if (!composioResponse.ok) {
-      console.error(`❌ Composio error: ${composioResponse.status}`);
-      const error = await composioResponse.text();
-      console.error('Error details:', error);
-      return NextResponse.json({
-        success: false,
-        error: `Composio API error: ${composioResponse.status}`,
-        details: error
-      }, { status: 500 });
-    }
-
-    const result = await composioResponse.json();
-    console.log('✅ Data fetched from Google Sheets via Composio');
-
-    // Parse the Composio response into our expected format
-    const data: any = {};
-    if (result.data) {
-      result.data.forEach((sheet: any) => {
-        if (sheet.sheetName === 'Agents') data.agents = sheet.values;
-        else if (sheet.sheetName === 'Cron Jobs') data.jobs = sheet.values;
-        else if (sheet.sheetName === 'Calendars') data.calendars = sheet.values;
-      });
-    }
-
+    const body = await request.json();
+    
+    console.log('✅ Sheet data received from Google Apps Script');
+    console.log('   Timestamp:', body.timestamp);
+    console.log('   Sheets:', body.sheets?.join(', '));
+    
+    // Store the data
+    lastSheetData = body.data;
+    lastSheetTime = body.timestamp || new Date().toISOString();
+    
+    console.log('   Data stored:');
+    console.log('   - Agents:', body.data?.agents?.length || 0, 'rows');
+    console.log('   - Jobs:', body.data?.jobs?.length || 0, 'rows');
+    console.log('   - Calendars:', body.data?.calendars?.length || 0, 'rows');
+    
     return NextResponse.json({
       success: true,
-      timestamp: new Date().toISOString(),
-      source: 'google_sheets_composio',
-      data: data,
-      rows_fetched: {
-        agents: data.agents?.length || 0,
-        jobs: data.jobs?.length || 0,
-        calendars: data.calendars?.length || 0
-      }
+      message: 'Sheet data received and stored',
+      timestamp: lastSheetTime
     }, { status: 200 });
-
   } catch (error) {
-    console.error('❌ Error fetching from Sheets:', error);
+    console.error('❌ Error storing sheet data:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      hint: 'Make sure COMPOSIO_API_KEY is configured'
-    }, { status: 500 });
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 400 });
   }
+}
+
+export async function GET() {
+  console.log('📥 Sheet data GET requested');
+  
+  if (!lastSheetData) {
+    console.log('❌ No data available');
+    return NextResponse.json({
+      success: false,
+      message: 'No data available - edit a cell in Google Sheet to trigger data push',
+      hint: 'Edit any cell in Agents, Cron Jobs, or Calendars sheet'
+    }, { status: 200 });
+  }
+  
+  console.log('✅ Returning stored sheet data');
+  return NextResponse.json({
+    success: true,
+    timestamp: lastSheetTime,
+    source: 'google_apps_script_webhook',
+    data: lastSheetData
+  }, { status: 200 });
 }

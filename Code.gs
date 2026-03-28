@@ -2,18 +2,18 @@
 // GOOGLE APPS SCRIPT - Dashboard Auto-Update
 // Spreadsheet: Agent Dashboard Data
 // ID: 1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk
-// Purpose: Monitor ALL 3 sheets and trigger webhook
+// Purpose: Monitor sheets and push data to dashboard via webhook
 // SHEET NAMES: Agents, Cron Jobs, Calendars (CORRECT)
 // ============================================
 
 // === CONFIGURATION ===
 const SPREADSHEET_ID = '1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk';
-const WEBHOOK_URL = 'https://dh-1-0-claws-dashboard.vercel.app/api/webhook'; // ✅ UPDATED
-const MONITORED_SHEETS = ['Agents', 'Cron Jobs', 'Calendars']; // ✅ FIXED: Sheet1 -> Agents
+const WEBHOOK_URL = 'https://dh-1-0-claws-dashboard.vercel.app/api/sheets'; // ✅ UPDATED to /api/sheets
+const MONITORED_SHEETS = ['Agents', 'Cron Jobs', 'Calendars'];
 const LAST_EDIT_PROPERTY = 'lastSheetUpdate';
 
 // ============================================
-// FUNCTION 1: Send Webhook Trigger
+// FUNCTION 1: Send Webhook Trigger with Data
 // ============================================
 function triggerWebhook() {
   try {
@@ -76,13 +76,12 @@ function onEdit(e) {
   Logger.log(`   Editor: ${editor}`);
   Logger.log(`   Time: ${new Date().toISOString()}`);
   
-  // Trigger webhook immediately
+  // Trigger webhook immediately with data
   triggerWebhook();
 }
 
 // ============================================
 // FUNCTION 3: Manual Test Webhook
-// (Run this from Apps Script Editor to test)
 // ============================================
 function testWebhook() {
   Logger.log('🧪 Testing webhook...');
@@ -95,7 +94,6 @@ function testWebhook() {
 
 // ============================================
 // FUNCTION 4: Setup Installable Trigger
-// (Run once to set up the onEdit trigger)
 // ============================================
 function setupTrigger() {
   Logger.log('⚙️ Setting up installable trigger...');
@@ -174,20 +172,13 @@ function getSheetDataForWebhook() {
 
 // ============================================
 // FUNCTION 6: Check Configuration
-// (Verify webhook URL is set correctly)
 // ============================================
 function checkConfig() {
   Logger.log('🔍 Configuration Check:');
   Logger.log(`   Spreadsheet ID: ${SPREADSHEET_ID}`);
   Logger.log(`   Webhook URL: ${WEBHOOK_URL}`);
   Logger.log(`   Monitored Sheets: ${MONITORED_SHEETS.join(', ')}`);
-  
-  if (WEBHOOK_URL === 'https://YOUR_WEBHOOK_ENDPOINT.com/api/dashboard-update') {
-    Logger.log(`   ⚠️  WARNING: Webhook URL not configured!`);
-    Logger.log(`   📝 Please update WEBHOOK_URL`);
-  } else {
-    Logger.log(`   ✅ Webhook URL configured`);
-  }
+  Logger.log(`   ✅ Webhook URL configured`);
   
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const allSheets = ss.getSheets().map(s => s.getName());
@@ -195,7 +186,7 @@ function checkConfig() {
 }
 
 // ============================================
-// FUNCTION 7: Manual Trigger (Test All 3 Sheets)
+// FUNCTION 7: Manual Trigger
 // ============================================
 function manualTriggerAll() {
   Logger.log('🚀 Manual trigger - fetching all sheet data...');
@@ -208,7 +199,7 @@ function manualTriggerAll() {
 }
 
 // ============================================
-// FUNCTION 8: Get Sheet Names (for debugging)
+// FUNCTION 8: Get Sheet Names
 // ============================================
 function getSheetNames() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -219,92 +210,3 @@ function getSheetNames() {
   });
   return sheets;
 }
-
-// ============================================
-// FUNCTION 9: Send All Data Now (Web Endpoint)
-// Called via /api/dashboard-trigger from dashboard
-// ============================================
-function sendAllDataNow() {
-  Logger.log('🚀 sendAllDataNow() triggered from dashboard');
-  
-  const data = getSheetDataForWebhook();
-  
-  const payload = {
-    timestamp: new Date().toISOString(),
-    spreadsheetId: SPREADSHEET_ID,
-    event: 'manual_trigger',
-    source: 'dashboard_refresh',
-    sheets: MONITORED_SHEETS,
-    data: data
-  };
-  
-  const options = {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true,
-    timeout: 10
-  };
-  
-  Logger.log('Sending data to webhook...');
-  const response = UrlFetchApp.fetch(WEBHOOK_URL, options);
-  const responseCode = response.getResponseCode();
-  
-  Logger.log(`✅ Webhook call completed: ${responseCode}`);
-  Logger.log(`   Payload size: ${JSON.stringify(payload).length} bytes`);
-  
-  return {
-    success: responseCode === 200 || responseCode === 204,
-    status: responseCode,
-    timestamp: new Date().toISOString(),
-    data_sent: {
-      agents: data.agents?.length || 0,
-      jobs: data.jobs?.length || 0,
-      calendars: data.calendars?.length || 0
-    }
-  };
-}
-
-// ============================================
-// NEXT STEPS: DEPLOY TO GOOGLE APPS SCRIPT
-// ============================================
-/*
-
-STEP 1: COPY THIS ENTIRE CODE
-   • Select all text in this file (Ctrl+A / Cmd+A)
-   • Copy it (Ctrl+C / Cmd+C)
-
-STEP 2: OPEN GOOGLE APPS SCRIPT EDITOR
-   • Go to your Google Sheet: https://docs.google.com/spreadsheets/d/1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk/edit
-   • Click: Tools → <> Script editor
-   • A new tab will open with Google Apps Script
-
-STEP 3: PASTE CODE
-   • Delete ALL existing code in Code.gs
-   • Paste this entire code
-   • Save (Ctrl+S / Cmd+S)
-
-STEP 4: RUN SETUP
-   • In the dropdown (left of Run button), select "setupTrigger"
-   • Click the ▶️ Run button
-   • Authorize when prompted
-   • Check Logs (View → Logs) for: "✅ Trigger installed successfully"
-
-STEP 5: TEST IT
-   • Select "testWebhook" from dropdown
-   • Click Run
-   • You should see: "✅ Webhook triggered: 200"
-   • If not 200, the endpoint is not responding
-
-STEP 6: EDIT A CELL IN YOUR SHEET
-   • Go back to the Google Sheet
-   • Edit ANY cell in Agents, Cron Jobs, or Calendars
-   • Go back to Apps Script: View → Logs
-   • You should see logs showing the edit was detected and webhook was sent
-
-STEP 7: CHECK DASHBOARD
-   • Open: https://dh-1-0-claws-dashboard.vercel.app/testing/dashboard.html
-   • Login: admin
-   • It should now show 🟢 LIVE DATA (from Google Sheets)
-
-*/

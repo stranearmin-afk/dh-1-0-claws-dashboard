@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center v1.0.13</title>
+  <title>Agent Command Center v1.0.14</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -44,7 +44,7 @@
 <body>
   <div class="container">
     <header>
-      <h1>🎯📊 Agent Command Center v1.0.13</h1>
+      <h1>🎯📊 Agent Command Center v1.0.14</h1>
       <p class="subtitle">Real-time agent and cron job monitoring (live Google Sheets data)</p>
     </header>
     
@@ -59,7 +59,7 @@
   </div>
   <script>
     const SHEETS_API_URL = '/api/sheets';
-    const APP_VERSION = 'v1.0.13';
+    const APP_VERSION = 'v1.0.14';
     
     let isLoggedIn = false;
     let agents = [];
@@ -86,8 +86,7 @@
       label.textContent = 'Fetching...';
       
       try {
-        // Fetch directly from Google Sheets via Composio
-        console.log('[REFRESH] Fetching from Google Sheets via Composio');
+        console.log('[REFRESH] Fetching latest data from /api/sheets');
         await fetchDataFromSheets();
       } catch (error) {
         console.error('[REFRESH] Error:', error);
@@ -190,7 +189,7 @@
 
     function showDashboard() {
       const dataStatusClass = dataSource === 'live' ? 'success' : 'warning';
-      const dataStatusText = dataSource === 'live' ? '✅ LIVE DATA (from Google Sheets)' : '⚠️ DEMO DATA';
+      const dataStatusText = dataSource === 'live' ? '✅ LIVE DATA (from Google Sheets)' : '⚠️ DEMO DATA (edit Google Sheet to update)';
       const statusBar = `<div class="data-status ${dataStatusClass}">${dataStatusText}</div>`;
       
       const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.length > 0 ? agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding: 20px;">No agents</td></tr>'}</tbody></table>`;
