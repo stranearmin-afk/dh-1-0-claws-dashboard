@@ -3,228 +3,846 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center v1.0.12</title>
+  <title>Agent Command Center - Testing Dashboard</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; background-image: radial-gradient(circle at 20% 50%, rgba(33, 150, 243, 0.1), transparent), radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.05), transparent); color: #e0e0e0; padding: 20px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 30px; }
-    h1 { color: #2196f3; font-size: 2.5em; margin-bottom: 10px; }
-    .subtitle { color: #90caf9; font-size: 1.1em; }
-    .header-controls { display: flex; gap: 15px; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-    .refresh-btn { padding: 8px 16px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
-    .refresh-btn:hover { background: #1976d2; opacity: 0.9; }
-    .refresh-btn:active { transform: scale(0.95); }
-    .refresh-btn.loading { opacity: 0.7; pointer-events: none; }
-    .refresh-btn.loading span { display: inline-block; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .tabs { display: flex; gap: 10px; margin: 30px 0; border-bottom: 2px solid #333; }
-    .tab-btn { padding: 10px 20px; background: none; border: none; color: #90caf9; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; transition: all 0.3s; }
-    .tab-btn.active { color: #2196f3; border-bottom-color: #2196f3; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    table { width: 100%; border-collapse: collapse; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; margin: 20px 0; }
-    thead { background: rgba(33, 150, 243, 0.1); }
-    th { padding: 12px; text-align: left; color: #2196f3; font-weight: 600; border-bottom: 2px solid #333; }
-    td { padding: 10px 12px; border-bottom: 1px solid #333; }
-    tr:hover { background: rgba(33, 150, 243, 0.05); }
-    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
-    .status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-    .status-idle { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
-    .status-success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-    .status-error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
-    .status-info { background: rgba(33, 150, 243, 0.2); color: #2196f3; }
-    .last-updated { text-align: right; color: #666; font-size: 0.9em; margin-top: 10px; }
-    .data-status { padding: 10px; border-radius: 4px; margin-bottom: 10px; background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196f3; color: #90caf9; }
-    .data-status.warning { background: rgba(255, 193, 7, 0.1); border-left-color: #ffc107; color: #ffc107; }
-    .data-status.success { background: rgba(76, 175, 80, 0.1); border-left-color: #4caf50; color: #4caf50; }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0a0a0a;
+      background-image: radial-gradient(circle at 20% 50%, rgba(33, 150, 243, 0.1), transparent),
+                        radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.05), transparent);
+      color: #e0e0e0;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: #2196f3;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #90caf9;
+      font-size: 1.1em;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px 12px;
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .search-box::placeholder {
+      color: #666;
+    }
+    
+    .sort-controls {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .sort-btn {
+      padding: 6px 10px;
+      background: rgba(33, 150, 243, 0.15);
+      border: 1px solid #2196f3;
+      border-radius: 4px;
+      color: #2196f3;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .sort-btn:hover {
+      background: rgba(33, 150, 243, 0.25);
+    }
+    
+    .sort-btn.active {
+      background: #2196f3;
+      color: #fff;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin: 30px 0;
+      border-bottom: 2px solid #333;
+    }
+    
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      color: #90caf9;
+      cursor: pointer;
+      font-size: 1em;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    
+    .tab-btn:hover {
+      color: #2196f3;
+    }
+    
+    .tab-btn.active {
+      color: #2196f3;
+      border-bottom-color: #2196f3;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(20, 20, 30, 0.8);
+      border: 1px solid #333;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    thead {
+      background: rgba(33, 150, 243, 0.1);
+    }
+    
+    th {
+      padding: 12px;
+      text-align: left;
+      color: #2196f3;
+      font-weight: 600;
+      border-bottom: 2px solid #333;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    
+    th:hover {
+      background: rgba(33, 150, 243, 0.15);
+    }
+    
+    th.sortable {
+      color: #90caf9;
+    }
+    
+    th.sortable::after {
+      content: ' ⇅';
+      font-size: 0.9em;
+      opacity: 0.6;
+    }
+    
+    th.sort-asc::after {
+      content: ' ↑';
+      opacity: 1;
+    }
+    
+    th.sort-desc::after {
+      content: ' ↓';
+      opacity: 1;
+    }
+    
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #333;
+    }
+    
+    tr {
+      transition: background 0.2s;
+    }
+    
+    tbody tr:hover {
+      background: rgba(33, 150, 243, 0.05);
+    }
+    
+    .expandable-row {
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .expand-btn {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      text-align: center;
+      color: #2196f3;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    
+    .expand-btn.expanded {
+      transform: rotate(90deg);
+    }
+    
+    .details-row {
+      display: none;
+    }
+    
+    .details-row.expanded {
+      display: table-row;
+    }
+    
+    .details-content {
+      background: rgba(33, 150, 243, 0.1);
+      padding: 20px;
+      border-radius: 4px;
+      border: 1px solid rgba(33, 150, 243, 0.2);
+    }
+    
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+    }
+    
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .detail-label {
+      color: #90caf9;
+      font-size: 0.9em;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .detail-value {
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95em;
+      word-break: break-all;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .status-active,
+    .status-success {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+    
+    .status-idle,
+    .status-pending {
+      background: rgba(158, 158, 158, 0.2);
+      color: #9e9e9e;
+    }
+    
+    .status-error {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+    
+    .status-running,
+    .status-scheduled {
+      background: rgba(33, 150, 243, 0.2);
+      color: #2196f3;
+    }
+    
+    .pulse-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    
+    .pulse-indicator.active {
+      background: #4caf50;
+      animation: pulse 2s infinite;
+    }
+    
+    .pulse-indicator.idle {
+      background: #9e9e9e;
+    }
+    
+    .pulse-indicator.error {
+      background: #f44336;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .action-btn {
+      padding: 6px 12px;
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid #4caf50;
+      border-radius: 4px;
+      color: #4caf50;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .action-btn:hover {
+      background: rgba(76, 175, 80, 0.3);
+    }
+    
+    .loading {
+      text-align: center;
+      color: #90caf9;
+      padding: 20px;
+    }
+    
+    .last-updated {
+      text-align: right;
+      color: #666;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
+    
+    .live-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #4caf50;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: pulse 1s infinite;
+    }
+    
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      cursor: help;
+    }
+    
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #90caf9;
+      font-size: 0.85em;
+      border-radius: 4px;
+      white-space: nowrap;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+    
+    .no-data {
+      text-align: center;
+      color: #666;
+      padding: 30px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🎯📊 Agent Command Center v1.0.12</h1>
-      <p class="subtitle">Real-time agent and cron job monitoring (live Google Sheets data)</p>
+      <h1>🎯📊 Agent Command Center</h1>
+      <p class="subtitle"><span class="live-indicator"></span>Real-time agent and cron job monitoring (v1.0.17)</p>
     </header>
     
-    <div class="header-controls">
-      <button class="refresh-btn" id="refreshBtn" onclick="triggerDashboardRefresh()">
-        <span>🔄</span>
-        <span id="refreshLabel">Refresh Now</span>
-      </button>
+    <div class="controls">
+      <input type="text" id="searchInput" class="search-box" placeholder="Search agents or jobs...">
+      <div class="sort-controls" id="sortControls"></div>
+    </div>
+    
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('agents')">⚡ Agents</button>
+      <button class="tab-btn" onclick="switchTab('crons')">🕐 Scheduled Jobs</button>
+      <button class="tab-btn" onclick="switchTab('calendars')">📅 Calendars</button>
     </div>
     
     <main id="main"></main>
   </div>
+  
   <script>
-    const TRIGGER_URL = '/api/dashboard-trigger';
     const WEBHOOK_URL = '/api/webhook';
-    const APP_VERSION = 'v1.0.12';
     
     let isLoggedIn = false;
     let agents = [];
     let cronJobs = [];
+    let calendars = [];
+    let searchTerm = '';
     let activeTab = localStorage.getItem('dashboardTab') || 'agents';
+    let agentSort = 'status';
+    let cronSort = 'next';
+    let expandedRows = new Set();
     let lastUpdated = 'Never';
-    let dataSource = 'mock';
-    let isRefreshing = false;
+    const APP_VERSION = 'v1.0.17';
 
     function switchTab(tab) {
       activeTab = tab;
       localStorage.setItem('dashboardTab', tab);
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
       showDashboard();
     }
 
-    async function triggerDashboardRefresh() {
-      if (isRefreshing) return;
-      
-      const btn = document.getElementById('refreshBtn');
-      const label = document.getElementById('refreshLabel');
-      
-      isRefreshing = true;
-      btn.classList.add('loading');
-      label.textContent = 'Triggering...';
-      
-      try {
-        // Step 1: Call Google Apps Script trigger
-        console.log('[REFRESH] Calling dashboard trigger endpoint');
-        const triggerResponse = await fetch(TRIGGER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (triggerResponse.ok) {
-          console.log('[REFRESH] Trigger sent successfully');
-          label.textContent = 'Fetching...';
-          
-          // Wait 1 second for Apps Script to send data
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Step 2: Fetch from webhook
-          await fetchDataFromWebhook();
-        } else {
-          console.error('[REFRESH] Trigger failed');
-          label.textContent = 'Error';
-        }
-      } catch (error) {
-        console.error('[REFRESH] Error:', error);
-        label.textContent = 'Error';
-      } finally {
-        isRefreshing = false;
-        btn.classList.remove('loading');
-        label.textContent = 'Refresh Now';
+    function toggleExpand(id) {
+      if (expandedRows.has(id)) {
+        expandedRows.delete(id);
+      } else {
+        expandedRows.add(id);
       }
+      showDashboard();
+    }
+
+    function setSortOrder(type, column) {
+      if (type === 'agent') {
+        agentSort = column;
+      } else {
+        cronSort = column;
+      }
+      showDashboard();
+    }
+
+    function formatDateGerman(isoString) {
+      if (!isoString) return 'N/A';
+      const date = new Date(isoString);
+      return date.toLocaleString('de-DE', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    function formatRelativeTime(isoString) {
+      if (!isoString) return 'N/A';
+      const date = new Date(isoString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 60) return `${seconds}s ago`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+      return `${Math.floor(seconds / 86400)}d ago`;
+    }
+
+    function sortAgents(list) {
+      const sorted = [...list];
+      switch(agentSort) {
+        case 'name':
+          sorted.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'status':
+          sorted.sort((a, b) => (b.status === 'active' ? 1 : -1) - (a.status === 'active' ? 1 : -1));
+          break;
+        case 'next':
+          sorted.sort((a, b) => new Date(b.nextSchedule) - new Date(a.nextSchedule));
+          break;
+        case 'last':
+          sorted.sort((a, b) => new Date(b.lastRun) - new Date(a.lastRun));
+          break;
+      }
+      return sorted;
+    }
+
+    function sortCrons(list) {
+      const sorted = [...list];
+      switch(cronSort) {
+        case 'name':
+          sorted.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'next':
+          sorted.sort((a, b) => new Date(b.nextRun) - new Date(a.nextRun));
+          break;
+        case 'status':
+          sorted.sort((a, b) => (b.status === 'success' ? 1 : -1) - (a.status === 'success' ? 1 : -1));
+          break;
+        case 'duration':
+          sorted.sort((a, b) => parseFloat(b.duration) - parseFloat(a.duration));
+          break;
+      }
+      return sorted;
+    }
+
+    function filterBySearch(list, type) {
+      if (!searchTerm) return list;
+      return list.filter(item => {
+        const text = `${item.name} ${item.description || ''} ${item.icon || ''}`.toLowerCase();
+        return text.includes(searchTerm.toLowerCase());
+      });
     }
 
     async function fetchDataFromWebhook() {
       try {
-        console.log('[WEBHOOK] Fetching from', WEBHOOK_URL);
-        const response = await fetch(WEBHOOK_URL, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache',
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
+        console.log('[WEBHOOK] Fetching data from', WEBHOOK_URL);
+        const response = await fetch(WEBHOOK_URL);
         const result = await response.json();
-        console.log('[WEBHOOK] Response:', result);
         
         if (result.success && result.data) {
-          const hasAgents = result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1;
-          const hasJobs = result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1;
-          
-          if (hasAgents || hasJobs) {
-            dataSource = 'live';
-            
-            if (hasAgents) {
-              agents = result.data.agents.slice(1).map(row => ({
-                id: row[0] || '',
-                name: row[1] || '',
-                icon: row[2] || '',
-                version: row[3] || '',
-                status: row[4] || 'unknown',
-                nextSchedule: row[5] || '',
-                lastRun: row[6] || '',
-                description: row[7] || ''
-              })).filter(a => a && a.name);
-            }
-            
-            if (hasJobs) {
-              cronJobs = result.data.jobs.slice(1).map(row => ({
-                id: row[0] || '',
-                name: row[1] || '',
-                icon: row[2] || '',
-                schedule: row[3] || '',
-                nextRun: row[4] || '',
-                lastRun: row[5] || '',
-                duration: row[6] || '',
-                status: row[7] || 'unknown'
-              })).filter(j => j && j.name);
-            }
-            
-            lastUpdated = new Date(result.timestamp || Date.now()).toLocaleTimeString();
-            showDashboard();
-            return;
+          console.log('[WEBHOOK] Got data:', result);
+          if (result.data.agents) {
+            agents = result.data.agents.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || '');
+              return {
+                id: vals[0],
+                name: vals[1],
+                icon: vals[2],
+                version: vals[3],
+                status: vals[4],
+                nextSchedule: vals[5],
+                lastRun: vals[6],
+                description: vals[7]
+              };
+            }).filter(a => a.name);
           }
+          if (result.data.jobs) {
+            cronJobs = result.data.jobs.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || '');
+              return {
+                id: vals[0],
+                name: vals[1],
+                icon: vals[2],
+                schedule: vals[3],
+                nextRun: vals[4],
+                lastRun: vals[5],
+                duration: vals[6],
+                status: vals[7]
+              };
+            }).filter(j => j.name);
+          }
+          if (result.data.calendars) {
+            calendars = result.data.calendars.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || '');
+              return {
+                id: vals[0],
+                name: vals[1],
+                description: vals[2],
+                access: vals[3]
+              };
+            }).filter(c => c.name);
+          }
+          
+          lastUpdated = new Date().toLocaleTimeString();
+          showDashboard();
+          return;
         }
       } catch (err) {
-        console.error('[WEBHOOK] Error:', err.message);
+        console.log('[WEBHOOK] Error or not available:', err.message);
       }
       
-      // Fallback to mock
-      dataSource = 'mock';
+      console.log('[FALLBACK] Using mock data');
       agents = getMockAgents();
       cronJobs = getMockCronJobs();
+      calendars = getMockCalendars();
       showDashboard();
     }
 
     function getMockAgents() {
       return [
-        { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-28T08:00:00Z', description: 'Personal performance coach' },
+        { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-27T08:00:00Z', description: 'Personal performance coach' },
+        { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-26T10:00:00Z', description: 'Executive analytics' },
+        { id: '3', name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-04-05T18:00:00Z', lastRun: '2026-03-22T18:00:00Z', description: 'Weekly calendar briefing' },
+        { id: '4', name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-30T18:00:00Z', lastRun: '2026-03-29T08:00:00Z', description: 'Daily calendar monitoring' },
+        { id: '5', name: 'Research Scout', icon: '🔍', version: 'Daily', status: 'active', nextSchedule: '2026-03-29T16:00:00Z', lastRun: '2026-03-29T13:00:00Z', description: 'Web research and intelligence gathering' },
+        { id: '6', name: 'Bouncer Agent', icon: '🚪', version: 'Daily', status: 'active', nextSchedule: '2026-03-30T01:00:00Z', lastRun: '2026-03-29T01:00:00Z', description: 'Security audit and access control' },
+        { id: '7', name: 'Job Application Agent', icon: '💼', version: 'v2.0', status: 'idle', nextSchedule: '', lastRun: '2026-03-20T14:30:00Z', description: 'Automated job application management' }
       ];
     }
 
     function getMockCronJobs() {
       return [
-        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily 18:00', nextRun: '2026-03-29T13:00:00Z', lastRun: '2026-03-28T12:00:00Z', duration: '19.2s', status: 'success' },
+        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '19.2s', status: 'success' },
+        { id: '2', name: 'Research Scout Hunt #1', icon: '🔍', schedule: 'Daily 08:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '27.7s', status: 'success' },
+        { id: '3', name: 'Research Scout Hunt #2', icon: '🔍', schedule: 'Daily 16:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T13:24:50Z', duration: '11.4s', status: 'success' },
+        { id: '4', name: 'Research Scout Hunt #3', icon: '🔍', schedule: 'Daily 00:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T13:24:50Z', duration: '9.3s', status: 'success' },
+        { id: '5', name: 'Bouncer Security Audit', icon: '🚪', schedule: 'Daily 01:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T13:24:50Z', duration: '34.7s', status: 'success' },
+        { id: '6', name: 'Consolidate Memory', icon: '🧠', schedule: 'Daily 22:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '6.0s', status: 'success' },
+        { id: '7', name: 'Healthcheck Security Audit', icon: '⚠️', schedule: 'Daily 02:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '12.4s', status: 'error' },
+        { id: '8', name: 'Cami Weekly Briefing', icon: '📅', schedule: 'Sunday 18:00', nextRun: '2026-04-05T20:00:00Z', lastRun: '2026-03-22T19:00:09Z', duration: '16.9s', status: 'success' }
       ];
     }
 
-    function formatDate(isoString) {
-      if (!isoString) return 'N/A';
-      try {
-        const date = new Date(isoString);
-        return date.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      } catch (e) {
-        return isoString;
+    function getMockCalendars() {
+      return [
+        { id: '1', name: 'FLCAL - Allgemein', description: 'General FleetLink scheduling', access: 'Writer' },
+        { id: '2', name: 'FLCAL - MO / Externe Termine', description: 'External/client meetings', access: 'Writer' },
+        { id: '3', name: 'FLCAL - Vertriebstermine', description: 'Sales/business development', access: 'Writer' },
+        { id: '4', name: 'dk.heinz@gmail.com', description: 'Personal calendar', access: 'Writer' },
+        { id: '5', name: 'FLCAL - Urlaub / krank', description: 'Vacation/sick reference', access: 'Reader' },
+        { id: '6', name: "Wife's iCloud", description: 'Family calendar (read-only)', access: 'Reader' }
+      ];
+    }
+
+    function renderAgentsTable(filtered) {
+      if (filtered.length === 0) {
+        return `<div class="no-data">No agents match your search</div>`;
       }
+
+      let html = `<div class="table-wrapper"><table><thead><tr>
+        <th></th>
+        <th class="sortable" onclick="setSortOrder('agent', 'name')">Agent Name</th>
+        <th>Version</th>
+        <th class="sortable" onclick="setSortOrder('agent', 'status')">Status</th>
+        <th class="sortable" onclick="setSortOrder('agent', 'next')">Next Run</th>
+        <th class="sortable" onclick="setSortOrder('agent', 'last')">Last Run</th>
+      </tr></thead><tbody>`;
+
+      filtered.forEach(agent => {
+        const isExpanded = expandedRows.has(agent.id);
+        const statusClass = agent.status === 'active' ? 'status-active' : 'status-idle';
+        
+        html += `<tr class="expandable-row" onclick="toggleExpand('${agent.id}')">
+          <td><span class="expand-btn ${isExpanded ? 'expanded' : ''}">▶</span></td>
+          <td>${agent.icon} <strong>${agent.name}</strong></td>
+          <td>${agent.version}</td>
+          <td><span class="status-badge ${statusClass}"><span class="pulse-indicator ${agent.status === 'active' ? 'active' : 'idle'}"></span>${agent.status}</span></td>
+          <td><small title="${formatDateGerman(agent.nextSchedule)}">${formatRelativeTime(agent.nextSchedule)}</small></td>
+          <td><small title="${formatDateGerman(agent.lastRun)}">${formatRelativeTime(agent.lastRun)}</small></td>
+        </tr>`;
+        
+        if (isExpanded) {
+          html += `<tr class="details-row expanded">
+            <td colspan="6">
+              <div class="details-content">
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <div class="detail-label">Agent ID</div>
+                    <div class="detail-value">${agent.id}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Name</div>
+                    <div class="detail-value">${agent.name}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Version</div>
+                    <div class="detail-value">${agent.version}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge ${statusClass}">${agent.status}</span></div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Next Scheduled Run</div>
+                    <div class="detail-value">${formatDateGerman(agent.nextSchedule)}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Last Run</div>
+                    <div class="detail-value">${formatDateGerman(agent.lastRun)}</div>
+                  </div>
+                  <div class="detail-item" style="grid-column: 1/-1;">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${agent.description || 'No description'}</div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+        }
+      });
+
+      html += `</tbody></table></div>`;
+      return html;
+    }
+
+    function renderCronsTable(filtered) {
+      if (filtered.length === 0) {
+        return `<div class="no-data">No jobs match your search</div>`;
+      }
+
+      let html = `<div class="table-wrapper"><table><thead><tr>
+        <th></th>
+        <th class="sortable" onclick="setSortOrder('cron', 'name')">Job Name</th>
+        <th>Schedule</th>
+        <th class="sortable" onclick="setSortOrder('cron', 'next')">Next Run</th>
+        <th>Last Run</th>
+        <th class="sortable" onclick="setSortOrder('cron', 'duration')">Duration</th>
+        <th class="sortable" onclick="setSortOrder('cron', 'status')">Status</th>
+      </tr></thead><tbody>`;
+
+      filtered.forEach(job => {
+        const isExpanded = expandedRows.has(job.id);
+        const statusClass = job.status === 'success' ? 'status-success' : (job.status === 'error' ? 'status-error' : 'status-pending');
+        
+        html += `<tr class="expandable-row" onclick="toggleExpand('${job.id}')">
+          <td><span class="expand-btn ${isExpanded ? 'expanded' : ''}">▶</span></td>
+          <td>${job.icon} <strong>${job.name}</strong></td>
+          <td>${job.schedule}</td>
+          <td><small title="${formatDateGerman(job.nextRun)}">${formatRelativeTime(job.nextRun)}</small></td>
+          <td><small title="${formatDateGerman(job.lastRun)}">${formatRelativeTime(job.lastRun)}</small></td>
+          <td><code>${job.duration}</code></td>
+          <td><span class="status-badge ${statusClass}">${job.status}</span></td>
+        </tr>`;
+        
+        if (isExpanded) {
+          html += `<tr class="details-row expanded">
+            <td colspan="7">
+              <div class="details-content">
+                <div class="details-grid">
+                  <div class="detail-item">
+                    <div class="detail-label">Job ID</div>
+                    <div class="detail-value">${job.id}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Name</div>
+                    <div class="detail-value">${job.name}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Schedule</div>
+                    <div class="detail-value">${job.schedule}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Next Execution</div>
+                    <div class="detail-value">${formatDateGerman(job.nextRun)}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Last Execution</div>
+                    <div class="detail-value">${formatDateGerman(job.lastRun)}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Duration</div>
+                    <div class="detail-value">${job.duration}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge ${statusClass}">${job.status}</span></div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>`;
+        }
+      });
+
+      html += `</tbody></table></div>`;
+      return html;
+    }
+
+    function renderCalendarsTable(filtered) {
+      if (filtered.length === 0) {
+        return `<div class="no-data">No calendars match your search</div>`;
+      }
+
+      let html = `<div class="table-wrapper"><table><thead><tr>
+        <th>Calendar Name</th>
+        <th>Description</th>
+        <th>Access Level</th>
+      </tr></thead><tbody>`;
+
+      filtered.forEach(cal => {
+        const accessClass = cal.access === 'Writer' ? 'status-active' : 'status-idle';
+        html += `<tr>
+          <td><strong>${cal.name}</strong></td>
+          <td>${cal.description || 'N/A'}</td>
+          <td><span class="status-badge ${accessClass}">${cal.access}</span></td>
+        </tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      return html;
     }
 
     function showDashboard() {
-      const dataStatusClass = dataSource === 'live' ? 'success' : 'warning';
-      const dataStatusText = dataSource === 'live' ? '✅ LIVE DATA (from Google Sheets)' : '⚠️ DEMO DATA';
-      const statusBar = `<div class="data-status ${dataStatusClass}">${dataStatusText}</div>`;
+      let content = '';
       
-      const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.length > 0 ? agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; padding: 20px;">No agents</td></tr>'}</tbody></table>`;
-      const cronTabContent = `<table><thead><tr><th>Job</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>${cronJobs.length > 0 ? cronJobs.map(j => `<tr><td>${j.icon} ${j.name}</td><td>${j.schedule}</td><td>${formatDate(j.nextRun)}</td><td>${formatDate(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center; padding: 20px;">No jobs</td></tr>'}</tbody></table>`;
+      if (activeTab === 'agents') {
+        const filtered = filterBySearch(sortAgents(agents), 'agent');
+        content = renderAgentsTable(filtered);
+        document.getElementById('sortControls').innerHTML = `
+          <button class="sort-btn ${agentSort === 'status' ? 'active' : ''}" onclick="setSortOrder('agent', 'status')">By Status</button>
+          <button class="sort-btn ${agentSort === 'name' ? 'active' : ''}" onclick="setSortOrder('agent', 'name')">By Name</button>
+          <button class="sort-btn ${agentSort === 'next' ? 'active' : ''}" onclick="setSortOrder('agent', 'next')">By Next Run</button>
+          <button class="sort-btn ${agentSort === 'last' ? 'active' : ''}" onclick="setSortOrder('agent', 'last')">By Last Run</button>
+        `;
+      } else if (activeTab === 'crons') {
+        const filtered = filterBySearch(sortCrons(cronJobs), 'cron');
+        content = renderCronsTable(filtered);
+        document.getElementById('sortControls').innerHTML = `
+          <button class="sort-btn ${cronSort === 'next' ? 'active' : ''}" onclick="setSortOrder('cron', 'next')">By Next Run</button>
+          <button class="sort-btn ${cronSort === 'name' ? 'active' : ''}" onclick="setSortOrder('cron', 'name')">By Name</button>
+          <button class="sort-btn ${cronSort === 'status' ? 'active' : ''}" onclick="setSortOrder('cron', 'status')">By Status</button>
+          <button class="sort-btn ${cronSort === 'duration' ? 'active' : ''}" onclick="setSortOrder('cron', 'duration')">By Duration</button>
+        `;
+      } else if (activeTab === 'calendars') {
+        const filtered = filterBySearch(calendars, 'calendar');
+        content = renderCalendarsTable(filtered);
+        document.getElementById('sortControls').innerHTML = '';
+      }
       
-      const tabButtons = `<div style="margin-bottom: 20px;"><button class="tab-btn ${activeTab === 'agents' ? 'active' : ''}" onclick="switchTab('agents')" style="font-size: 0.95rem; font-weight: 600;">⚡ Agents (${agents.length})</button><button class="tab-btn ${activeTab === 'crons' ? 'active' : ''}" onclick="switchTab('crons')" style="font-size: 0.95rem; font-weight: 600;">🕐 Jobs (${cronJobs.length})</button></div>`;
-      
-      document.getElementById('main').innerHTML = statusBar + tabButtons + (activeTab === 'agents' ? agentTabContent : cronTabContent) + `<div class="last-updated">Last updated: ${lastUpdated} | Version: ${APP_VERSION}</div>`;
+      document.getElementById('main').innerHTML = content + `<div class="last-updated">Last updated: ${lastUpdated}</div>`;
     }
 
-    // On login: trigger refresh to fetch current data
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          searchTerm = e.target.value;
+          showDashboard();
+        });
+      }
+    });
+
+    // Initialize
     if (localStorage.getItem('dashboardLoggedIn')) {
       isLoggedIn = true;
-      triggerDashboardRefresh();
+      fetchDataFromWebhook();
+      setInterval(() => {
+        if (isLoggedIn) fetchDataFromWebhook();
+      }, 5000);
     } else {
-      document.getElementById('main').innerHTML = `<div class="login-form" style="max-width: 300px; margin: 50px auto; padding: 30px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 8px;"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: #e0e0e0;"><button type="submit" style="width: 100%; padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600;">Log In</button></form><div id="loginError" class="error" style="display: none; color: #f44336; margin-top: 10px; text-align: center;"></div></div>`;
+      document.getElementById('main').innerHTML = `
+        <div style="max-width: 400px; margin: 50px auto; text-align: center;">
+          <h2 style="color: #2196f3; margin-bottom: 20px;">Dashboard Login</h2>
+          <form onsubmit="handleLogin(event)" style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="password" id="passwordInput" placeholder="Enter password" required
+              style="padding: 10px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-family: 'Inter', sans-serif;">
+            <button type="submit" style="padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#1976d2'" onmouseout="this.style.background='#2196f3'">Log In</button>
+          </form>
+          <div id="loginError" style="display: none; color: #f44336; margin-top: 10px;"></div>
+        </div>
+      `;
     }
 
     function handleLogin(e) {
@@ -233,9 +851,12 @@
       if (password === 'admin') {
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
-        triggerDashboardRefresh();
+        fetchDataFromWebhook();
+        setInterval(() => {
+          if (isLoggedIn) fetchDataFromWebhook();
+        }, 5000);
       } else {
-        document.getElementById('loginError').textContent = '❌ Invalid credentials';
+        document.getElementById('loginError').textContent = 'Invalid password';
         document.getElementById('loginError').style.display = 'block';
       }
     }
