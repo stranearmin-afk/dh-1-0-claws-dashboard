@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🤖</text></svg>">
-  <title>Agent Command Center - v1.0.27</title>
+  <title>Agent Command Center - v1.0.28</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #d1d5db; padding: 20px; min-height: 100vh; }
@@ -48,6 +48,8 @@
     .status.success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
     .status.error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
     .status.scheduled { background: rgba(33, 150, 243, 0.2); color: #2196f3; }
+    .status.writer { background: rgba(33, 150, 243, 0.2); color: #2196f3; }
+    .status.reader { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
     .tooltip { position: relative; display: inline-block; cursor: help; border-bottom: 1px dotted #60a5fa; }
     .tooltip .tooltiptext { visibility: hidden; background-color: rgba(0, 0, 0, 0.8); color: #d1d5db; text-align: left; padding: 10px; border-radius: 4px; position: absolute; z-index: 100; bottom: 125%; left: 0; white-space: normal; width: 250px; font-size: 0.85em; border: 1px solid #1f2937; }
     .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 10px; margin-left: -5px; border-width: 5px; border-style: solid; border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent; }
@@ -80,7 +82,7 @@
         <div class="header-top">
           <div class="header-left">
             <h1>🤖 Agent Command Center</h1>
-            <p class="subtitle">Real-time monitoring • v1.0.27</p>
+            <p class="subtitle">Real-time monitoring • v1.0.28</p>
           </div>
           <div class="header-right">
             <div class="timezone-info">
@@ -142,9 +144,10 @@
           <thead>
             <tr>
               <th style="width: 40px;"></th>
-              <th>Calendar</th>
+              <th>Calendar Name</th>
               <th>Description</th>
               <th>Access</th>
+              <th>Calendar ID</th>
             </tr>
           </thead>
           <tbody id="calendars-tbody"></tbody>
@@ -255,23 +258,68 @@
           const jobsList = data.data.jobs || [];
           const calendarsList = data.data.calendars || [];
           
-          agents = agentsList.map((row, idx) => {
-            if (Array.isArray(row)) {
-              return { id: row[0] || '', name: row[1] || '', icon: row[2] || '📌', version: row[3] || '', status: row[4] || 'idle', nextSchedule: row[5] || '', lastRun: row[6] || '', description: row[7] || '' };
-            }
-          }).filter((a, idx) => idx > 0 || (a.name !== 'Name' && a.name !== 'ID'));
+          agents = agentsList
+            .map((row, idx) => {
+              if (Array.isArray(row)) {
+                return { 
+                  id: row[0] || '', 
+                  name: row[1] || '', 
+                  icon: row[2] || '📌', 
+                  version: row[3] || '', 
+                  status: row[4] || 'idle', 
+                  nextSchedule: row[5] || '', 
+                  lastRun: row[6] || '', 
+                  description: row[7] || '' 
+                };
+              }
+            })
+            .filter((a) => {
+              const nameStr = (a.name || '').toLowerCase();
+              if (nameStr.includes('name') || nameStr.includes('id') || nameStr === '') return false;
+              return true;
+            });
           
-          cronJobs = jobsList.map((row, idx) => {
-            if (Array.isArray(row)) {
-              return { id: row[0] || '', name: row[1] || '', icon: row[2] || '📋', schedule: row[3] || '', nextRun: row[4] || '', lastRun: row[5] || '', duration: row[6] || '', status: row[7] || '', description: row[8] || '' };
-            }
-          }).filter((j, idx) => idx > 0 || (j.name !== 'Name' && j.name !== 'ID'));
+          cronJobs = jobsList
+            .map((row, idx) => {
+              if (Array.isArray(row)) {
+                return { 
+                  id: row[0] || '', 
+                  name: row[1] || '', 
+                  icon: row[2] || '📋', 
+                  schedule: row[3] || '', 
+                  nextRun: row[4] || '', 
+                  lastRun: row[5] || '', 
+                  duration: row[6] || '', 
+                  status: row[7] || '', 
+                  description: row[8] || '' 
+                };
+              }
+            })
+            .filter((j) => {
+              const nameStr = (j.name || '').toLowerCase();
+              const durationStr = (j.duration || '').toLowerCase();
+              if (nameStr.includes('name') || nameStr.includes('icon') || nameStr.includes('schedule') || nameStr === '') return false;
+              if (durationStr.includes('nan') || durationStr.includes('duration')) return false;
+              return true;
+            });
           
-          calendars = calendarsList.map((row, idx) => {
-            if (Array.isArray(row)) {
-              return { id: row[0] || '', name: row[1] || '', description: row[2] || '', access: row[3] || '', details: row[4] || '' };
-            }
-          }).filter((c, idx) => idx > 0 || (c.name !== 'Calendar' && c.name !== 'ID'));
+          calendars = calendarsList
+            .map((row, idx) => {
+              if (Array.isArray(row)) {
+                return { 
+                  id: row[0] || '',
+                  name: row[1] || '',
+                  description: row[2] || '',
+                  access: row[3] || '',
+                  details: row[7] || ''
+                };
+              }
+            })
+            .filter((c) => {
+              const nameStr = (c.name || '').toLowerCase();
+              if (nameStr.includes('calendar') || nameStr.includes('name') || nameStr.includes('id') || nameStr === '') return false;
+              return true;
+            });
           
           statusEl.textContent = '✅ Data refreshed: ' + agents.length + ' agents, ' + cronJobs.length + ' jobs';
         }
@@ -292,12 +340,11 @@
         { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily 18:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '19.2s', status: 'success', description: 'Sends daily briefing with calendar and work summary' }
       ];
       calendars = [
-        { id: '1', name: 'FLCAL - Allgemein', description: 'General scheduling', access: 'Writer', details: 'All team members can edit' }
+        { id: 'FLCAL-001', name: 'FLCAL - Allgemein', description: 'General scheduling', access: 'Writer', details: 'All team members can edit general events and meetings' }
       ];
     }
 
     function renderData() {
-      // Agents
       document.getElementById('agents-tbody').innerHTML = agents.map(a => `
         <tr id="row-agents-${a.id}" onclick="toggleDetail('${a.id}', 'agents')">
           <td><span class="expand-icon">▶</span></td>
@@ -317,7 +364,6 @@
         </tr>
       `).join('');
       
-      // Jobs
       document.getElementById('crons-tbody').innerHTML = cronJobs.map(j => `
         <tr id="row-crons-${j.id}" onclick="toggleDetail('${j.id}', 'crons')">
           <td><span class="expand-icon">▶</span></td>
@@ -338,16 +384,16 @@
         </tr>
       `).join('');
       
-      // Calendars
       document.getElementById('calendars-tbody').innerHTML = calendars.map(c => `
         <tr id="row-calendars-${c.id}" onclick="toggleDetail('${c.id}', 'calendars')">
           <td><span class="expand-icon">▶</span></td>
           <td><span class="tooltip">${c.name}<span class="tooltiptext">${c.details}</span></span></td>
           <td>${c.description}</td>
           <td><span class="status ${c.access.toLowerCase()}">${c.access}</span></td>
+          <td><code>${c.id}</code></td>
         </tr>
         <tr id="detail-calendars-${c.id}" class="detail-row">
-          <td colspan="4">
+          <td colspan="5">
             <div class="detail-cell">
               <h4>📋 Details</h4>
               <p>${c.details || 'No additional details available'}</p>
