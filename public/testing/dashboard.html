@@ -27,33 +27,28 @@
     .status-idle { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
     .status-success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
     .status-error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
-    .login-form { max-width: 300px; margin: 100px auto; padding: 30px; background: rgba(20, 20, 30, 0.9); border: 1px solid #333; border-radius: 4px; }
-    .login-form input { width: 100%; padding: 10px; margin: 10px 0; background: #1a1a2e; border: 1px solid #333; color: #e0e0e0; border-radius: 4px; }
-    .login-form button { width: 100%; padding: 10px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 10px; }
-    .error { color: #f44336; margin: 10px 0; }
     .loading { text-align: center; color: #90caf9; padding: 20px; }
+    .last-updated { text-align: right; color: #666; font-size: 0.9em; margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>⚙️ Agent Command Center v1.0.5 (Google Sheets Backend)</h1>
-      <p class="subtitle">Real-time agent and cron job monitoring from Google Sheets</p>
+      <h1>🎯📊 Agent Command Center v1.0.6 (Webhook Sync)</h1>
+      <p class="subtitle">Real-time agent and cron job monitoring from Google Sheets via webhook</p>
     </header>
     <main id="main"></main>
   </div>
   <script>
+    const WEBHOOK_URL = '/api/webhook';
     const SPREADSHEET_ID = '1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk';
     
     let isLoggedIn = false;
     let agents = [];
     let cronJobs = [];
-    let agentSort = 'status';
-    let cronSort = 'next';
-    let expandedAgentId = null;
-    let expandedCronId = null;
-    let activeTab = localStorage.getItem('dashboardTab') || 'crons';
-    const APP_VERSION = 'v1.0.5';
+    let activeTab = localStorage.getItem('dashboardTab') || 'agents';
+    const APP_VERSION = 'v1.0.6';
+    let lastUpdated = 'Never';
 
     function switchTab(tab) {
       activeTab = tab;
@@ -61,40 +56,42 @@
       showDashboard();
     }
 
-    async function fetchDataFromGoogleSheets() {
+    async function fetchDataFromWebhook() {
       try {
-        const sheets = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=AIzaSyDummy&ranges=Sheet1!A1:H100&'Cron Jobs'!A1:H100&includeGridData=true`)
-          .then(r => r.json())
-          .catch(() => ({ sheets: [] }));
+        console.log('[WEBHOOK] Fetching from', WEBHOOK_URL);
+        const response = await fetch(WEBHOOK_URL);
+        const result = await response.json();
         
-        if (sheets && sheets.sheets && sheets.sheets.length > 0) {
-          const agentData = sheets.sheets[0].data[0].rowData || [];
-          agents = agentData.slice(1).map(row => {
-            const vals = (row.values || []).map(v => v.formattedValue || '');
-            return { id: vals[0], name: vals[1], icon: vals[2], version: vals[3], status: vals[4], nextSchedule: vals[5], lastRun: vals[6], description: vals[7] };
-          }).filter(a => a.name);
-        }
-        
-        if (sheets && sheets.sheets && sheets.sheets.length > 1) {
-          const jobData = sheets.sheets[1].data[0].rowData || [];
-          cronJobs = jobData.slice(1).map(row => {
-            const vals = (row.values || []).map(v => v.formattedValue || '');
-            return { id: vals[0], name: vals[1], icon: vals[2], schedule: vals[3], nextRun: vals[4], lastRun: vals[5], duration: vals[6], status: vals[7] };
-          }).filter(j => j.name);
+        if (result.success && result.data) {
+          console.log('[WEBHOOK] Got data:', result);
+          if (result.data.agents) {
+            agents = result.data.agents.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || '');
+              return { id: vals[0], name: vals[1], icon: vals[2], version: vals[3], status: vals[4], nextSchedule: vals[5], lastRun: vals[6], description: vals[7] };
+            }).filter(a => a.name);
+          }
+          if (result.data.jobs) {
+            cronJobs = result.data.jobs.slice(1).map(row => {
+              const vals = (row.values || []).map(v => v.formattedValue || '');
+              return { id: vals[0], name: vals[1], icon: vals[2], schedule: vals[3], nextRun: vals[4], lastRun: vals[5], duration: vals[6], status: vals[7] };
+            }).filter(j => j.name);
+          }
+          lastUpdated = new Date().toLocaleTimeString();
+          showDashboard();
+          return;
         }
       } catch (err) {
-        console.log('Google Sheets API unavailable, using fallback data');
+        console.log('[WEBHOOK] Error:', err.message);
       }
-      
-      if (!agents || agents.length === 0) agents = getMockAgents();
-      if (!cronJobs || cronJobs.length === 0) cronJobs = getMockCronJobs();
+      agents = getMockAgents();
+      cronJobs = getMockCronJobs();
       showDashboard();
     }
 
     function getMockAgents() {
       return [
         { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-27T08:00:00Z', description: 'Personal performance coach' },
-        { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-26T10:00:00Z', description: 'Executive analytics' },
+        { id: '2', name: 'TEST Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-26T10:00:00Z', description: 'Executive analytics' },
         { id: '3', name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-29T18:00:00Z', lastRun: '2026-03-22T18:00:00Z', description: 'Calendar briefing' },
         { id: '4', name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-28T18:00:00Z', lastRun: '2026-03-27T08:00:00Z', description: 'Daily monitoring' },
         { id: '5', name: 'Research Scout', icon: '🔍', version: 'Daily', status: 'active', nextSchedule: '2026-03-27T16:00:00Z', lastRun: '2026-03-27T13:00:00Z', description: 'Web research' },
@@ -105,13 +102,13 @@
 
     function getMockCronJobs() {
       return [
-        { id: '1', name: 'Cami Daily Briefing', icon: '📧', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '19.2s', status: 'success' },
+        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '19.2s', status: 'success' },
         { id: '2', name: 'Research Scout Hunt #1', icon: '🔍', schedule: 'Daily 08:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '27.7s', status: 'success' },
         { id: '3', name: 'Research Scout Hunt #2', icon: '🔍', schedule: 'Daily 16:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '11.4s', status: 'success' },
         { id: '4', name: 'Research Scout Hunt #3', icon: '🔍', schedule: 'Daily 00:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '9.3s', status: 'success' },
-        { id: '5', name: 'Bouncer Security Audit', icon: '🛡️', schedule: 'Daily 01:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '34.7s', status: 'success' },
-        { id: '6', name: 'Consolidate Memory', icon: '💾', schedule: 'Daily 22:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '6.0s', status: 'success' },
-        { id: '7', name: 'Healthcheck Security Audit', icon: '⚕️', schedule: 'Daily 02:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '12.4s', status: 'error' },
+        { id: '5', name: 'Bouncer Security Audit', icon: '🚪', schedule: 'Daily 01:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-26T13:24:50Z', duration: '34.7s', status: 'success' },
+        { id: '6', name: 'Consolidate Memory', icon: '🧠', schedule: 'Daily 22:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '6.0s', status: 'success' },
+        { id: '7', name: 'Healthcheck Security Audit', icon: '⚠️', schedule: 'Daily 02:00', nextRun: '2026-03-28T13:24:50Z', lastRun: '2026-03-27T12:24:50Z', duration: '12.4s', status: 'error' },
         { id: '8', name: 'Cami Weekly Briefing', icon: '📅', schedule: 'Sunday 18:00', nextRun: '2026-03-29T20:00:00Z', lastRun: '2026-03-22T19:00:09Z', duration: '16.9s', status: 'success' }
       ];
     }
@@ -125,8 +122,19 @@
     function showDashboard() {
       const agentTabContent = `<table><thead><tr><th>Agent</th><th>Version</th><th>Status</th><th>Next Run</th><th>Last Run</th></tr></thead><tbody>${agents.map(a => `<tr><td>${a.icon} ${a.name}</td><td>${a.version}</td><td><span class="status-badge status-${a.status}">${a.status}</span></td><td>${formatDate(a.nextSchedule)}</td><td>${formatDate(a.lastRun)}</td></tr>`).join('')}</tbody></table>`;
       const cronTabContent = `<table><thead><tr><th>Job</th><th>Schedule</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th></tr></thead><tbody>${cronJobs.map(j => `<tr><td>${j.icon} ${j.name}</td><td>${j.schedule}</td><td>${formatDate(j.nextRun)}</td><td>${formatDate(j.lastRun)}</td><td>${j.duration}</td><td><span class="status-badge status-${j.status}">${j.status}</span></td></tr>`).join('')}</tbody></table>`;
-      document.getElementById('main').innerHTML = `<div style="margin-bottom: 20px;"><button class="tab-btn ${activeTab === 'agents' ? 'active' : ''}" onclick="switchTab('agents')" style="font-size: 0.95rem; font-weight: 600; transition: all 0.2s; position: relative; top: 1px;">⚡ Agents</button><button class="tab-btn ${activeTab === 'crons' ? 'active' : ''}" onclick="switchTab('crons')" style="font-size: 0.95rem; font-weight: 600; transition: all 0.2s; position: relative; top: 1px;">⏰ Scheduled Jobs</button></div>${activeTab === 'agents' ? agentTabContent : cronTabContent}</main></div>`;
+      document.getElementById('main').innerHTML = `<div style="margin-bottom: 20px;"><button class="tab-btn ${activeTab === 'agents' ? 'active' : ''}" onclick="switchTab('agents')" style="font-size: 0.95rem; font-weight: 600;">⚡ Agents</button><button class="tab-btn ${activeTab === 'crons' ? 'active' : ''}" onclick="switchTab('crons')" style="font-size: 0.95rem; font-weight: 600;">🕐 Scheduled Jobs</button></div>${activeTab === 'agents' ? agentTabContent : cronTabContent}<div class="last-updated">Last updated: ${lastUpdated}</div>`;
     }
+
+    if (localStorage.getItem('dashboardLoggedIn')) {
+      isLoggedIn = true;
+      fetchDataFromWebhook();
+    } else {
+      document.getElementById('main').innerHTML = `<div class="login-form"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required><button type="submit">Log In</button></form><div id="loginError" class="error" style="display: none;"></div></div>`;
+    }
+
+    setInterval(() => {
+      if (isLoggedIn) fetchDataFromWebhook();
+    }, 5000);
 
     function handleLogin(e) {
       e.preventDefault();
@@ -134,33 +142,12 @@
       if (password === 'admin') {
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
-        fetchDataFromGoogleSheets();
+        fetchDataFromWebhook();
       } else {
         document.getElementById('loginError').textContent = 'Invalid credentials';
         document.getElementById('loginError').style.display = 'block';
       }
     }
-
-    function handleLogout() {
-      isLoggedIn = false;
-      localStorage.removeItem('dashboardLoggedIn');
-      showLogin();
-    }
-
-    function showLogin() {
-      document.getElementById('main').innerHTML = `<div class="login-form"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required><button type="submit">Login</button></form><div id="loginError" class="error" style="display: none;"></div></div>`;
-    }
-
-    if (localStorage.getItem('dashboardLoggedIn')) {
-      isLoggedIn = true;
-      fetchDataFromGoogleSheets();
-    } else {
-      showLogin();
-    }
-
-    setInterval(() => {
-      if (isLoggedIn) fetchDataFromGoogleSheets();
-    }, 30000);
   </script>
 </body>
 </html>
