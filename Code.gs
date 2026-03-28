@@ -2,68 +2,102 @@
 // GOOGLE APPS SCRIPT - Dashboard Auto-Update
 // Spreadsheet: Agent Dashboard Data
 // ID: 1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk
-// Purpose: Monitor sheets and push data to dashboard via webhook
-// SHEET NAMES: Agents, Cron Jobs, Calendars (CORRECT)
+// Purpose: Push sheet data to dashboard when edited
 // ============================================
 
 // === CONFIGURATION ===
 const SPREADSHEET_ID = '1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk';
-const WEBHOOK_URL = 'https://dh-1-0-claws-dashboard.vercel.app/api/sheets'; // ✅ UPDATED to /api/sheets
+const WEBHOOK_URL = 'https://dh-1-0-claws-dashboard.vercel.app/api/sheets';
 const MONITORED_SHEETS = ['Agents', 'Cron Jobs', 'Calendars'];
-const LAST_EDIT_PROPERTY = 'lastSheetUpdate';
 
 // ============================================
-// FUNCTION 1: Send Webhook Trigger with Data
+// WEB APP ENDPOINT - doPost for refresh button
 // ============================================
-function triggerWebhook() {
+function doPost(e) {
+  Logger.log('🚀 doPost called - fetching and sending all sheet data');
+  return sendAllDataNow();
+}
+
+function doGet(e) {
+  return HtmlService.createHtmlOutput('Google Apps Script is running');
+}
+
+// ============================================
+// MAIN FUNCTION: Fetch all data and POST to webhook
+// ============================================
+function sendAllDataNow() {
   try {
+    Logger.log('📊 sendAllDataNow() - gathering sheet data...');
+    
+    const data = getSheetDataForWebhook();
+    
     const payload = {
       timestamp: new Date().toISOString(),
       spreadsheetId: SPREADSHEET_ID,
       event: 'sheet_updated',
       sheets: MONITORED_SHEETS,
-      data: getSheetDataForWebhook()
+      data: data
     };
 
+    Logger.log('📤 Sending payload to webhook...');
+    Logger.log(`   URL: ${WEBHOOK_URL}`)
+    Logger.log(`   Size: ${JSON.stringify(payload).length} bytes`);
+    
     const options = {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify(payload),
       muteHttpExceptions: true,
-      timeout: 10
+      timeout: 30
     };
 
     const response = UrlFetchApp.fetch(WEBHOOK_URL, options);
     const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
     
-    Logger.log(`✅ Webhook triggered: ${responseCode}`);
-    Logger.log(`   URL: ${WEBHOOK_URL}`);
-    Logger.log(`   Payload size: ${JSON.stringify(payload).length} bytes`);
+    Logger.log(`✅ Webhook response: ${responseCode}`)
+    Logger.log(`   Response text: ${responseText.substring(0, 200)}`);
     
-    // Store last trigger time
-    const scriptProperties = PropertiesService.getScriptProperties();
-    scriptProperties.setProperty(LAST_EDIT_PROPERTY, new Date().toISOString());
-    
-    return responseCode === 200 || responseCode === 204;
+    if (responseCode === 200 || responseCode === 204) {
+      Logger.log('✅ Data successfully sent to dashboard');
+      return HtmlService.createHtmlOutput(JSON.stringify({
+        success: true,
+        message: 'Data sent to dashboard',
+        status: responseCode,
+        timestamp: new Date().toISOString()
+      }));
+    } else {
+      Logger.log(`⚠️  Webhook returned ${responseCode}`);
+      return HtmlService.createHtmlOutput(JSON.stringify({
+        success: false,
+        message: `Webhook error: ${responseCode}`,
+        response: responseText
+      }));
+    }
   } catch (error) {
-    Logger.log(`❌ Webhook error: ${error.toString()}`);
-    return false;
+    Logger.log(`❌ Error in sendAllDataNow: ${error.toString()}`);
+    return HtmlService.createHtmlOutput(JSON.stringify({
+      success: false,
+      error: error.toString()
+    }));
   }
 }
 
 // ============================================
-// FUNCTION 2: On Sheet Edit Trigger
-// (Detects ANY cell change in monitored sheets)
+// ON EDIT TRIGGER - Simple trigger (has spreadsheet permission)
 // ============================================
 function onEdit(e) {
-  if (!e || !e.source) return; // Safety check
+  if (!e || !e.source) {
+    Logger.log('❌ onEdit: No event or source');
+    return;
+  }
   
   const sheet = e.source.getActiveSheet();
   const sheetName = sheet.getName();
   
-  // Only monitor Agents, Cron Jobs, and Calendars
+  // Only monitor these sheets
   if (!MONITORED_SHEETS.includes(sheetName)) {
-    Logger.log(`↩️  Skipped sheet: ${sheetName} (not monitored)`);
+    Logger.log(`↩️  Skipped sheet: ${sheetName}`);
     return;
   }
   
@@ -74,53 +108,41 @@ function onEdit(e) {
   Logger.log(`   Range: ${editRange.getA1Notation()}`);
   Logger.log(`   Value: ${editRange.getValue()}`);
   Logger.log(`   Editor: ${editor}`);
-  Logger.log(`   Time: ${new Date().toISOString()}`);
   
-  // Trigger webhook immediately with data
-  triggerWebhook();
+  // Get the data directly from sheet (onEdit has sheet permission)
+  Logger.log(`📊 Gathering data to send...`);
+  const data = getSheetDataForWebhook();
+  
+  const payload = {
+    timestamp: new Date().toISOString(),
+    spreadsheetId: SPREADSHEET_ID,
+    event: 'sheet_updated',
+    sheets: MONITORED_SHEETS,
+    data: data
+  };
+
+  Logger.log('📤 Posting to webhook...');
+  
+  try {
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+      timeout: 30
+    };
+
+    const response = UrlFetchApp.fetch(WEBHOOK_URL, options);
+    const responseCode = response.getResponseCode();
+    
+    Logger.log(`✅ onEdit webhook response: ${responseCode}`);
+  } catch (error) {
+    Logger.log(`❌ onEdit webhook error: ${error.toString()}`);
+  }
 }
 
 // ============================================
-// FUNCTION 3: Manual Test Webhook
-// ============================================
-function testWebhook() {
-  Logger.log('🧪 Testing webhook...');
-  Logger.log(`   Target: ${WEBHOOK_URL}`);
-  Logger.log(`   Sheets: ${MONITORED_SHEETS.join(", ")}`);
-  const success = triggerWebhook();
-  Logger.log(`Test result: ${success ? '✅ SUCCESS' : '❌ FAILED'}`);
-  Logger.log('Check your webhook endpoint for the request.');
-}
-
-// ============================================
-// FUNCTION 4: Setup Installable Trigger
-// ============================================
-function setupTrigger() {
-  Logger.log('⚙️ Setting up installable trigger...');
-  
-  // Remove existing triggers to avoid duplicates
-  const triggers = ScriptApp.getProjectTriggers();
-  let removed = 0;
-  triggers.forEach(trigger => {
-    if (trigger.getHandlerFunction() === 'onEdit') {
-      ScriptApp.deleteTrigger(trigger);
-      removed++;
-    }
-  });
-  
-  Logger.log(`Removed ${removed} existing triggers`);
-  
-  // Create new onEdit trigger
-  ScriptApp.newTrigger('onEdit')
-    .forSpreadsheet(SpreadsheetApp.openById(SPREADSHEET_ID))
-    .onEdit()
-    .create();
-  
-  Logger.log('✅ Trigger installed successfully');
-}
-
-// ============================================
-// FUNCTION 5: Get Data from ALL 3 Sheets
+// GET DATA FROM ALL 3 SHEETS
 // ============================================
 function getSheetDataForWebhook() {
   try {
@@ -132,10 +154,10 @@ function getSheetDataForWebhook() {
       const agentSheet = ss.getSheetByName('Agents');
       if (agentSheet) {
         data.agents = agentSheet.getDataRange().getValues();
-        Logger.log(`✅ Agents data: ${data.agents.length} rows`);
+        Logger.log(`✅ Agents: ${data.agents.length} rows`);
       }
     } catch (e) {
-      Logger.log(`⚠️  Could not fetch Agents: ${e.toString()}`);
+      Logger.log(`⚠️  Agents error: ${e.toString()}`);
     }
     
     // Cron Jobs
@@ -143,10 +165,10 @@ function getSheetDataForWebhook() {
       const jobSheet = ss.getSheetByName('Cron Jobs');
       if (jobSheet) {
         data.jobs = jobSheet.getDataRange().getValues();
-        Logger.log(`✅ Cron Jobs data: ${data.jobs.length} rows`);
+        Logger.log(`✅ Jobs: ${data.jobs.length} rows`);
       }
     } catch (e) {
-      Logger.log(`⚠️  Could not fetch Cron Jobs: ${e.toString()}`);
+      Logger.log(`⚠️  Jobs error: ${e.toString()}`);
     }
     
     // Calendars
@@ -154,10 +176,10 @@ function getSheetDataForWebhook() {
       const calendarSheet = ss.getSheetByName('Calendars');
       if (calendarSheet) {
         data.calendars = calendarSheet.getDataRange().getValues();
-        Logger.log(`✅ Calendars data: ${data.calendars.length} rows`);
+        Logger.log(`✅ Calendars: ${data.calendars.length} rows`);
       }
     } catch (e) {
-      Logger.log(`⚠️  Could not fetch Calendars: ${e.toString()}`);
+      Logger.log(`⚠️  Calendars error: ${e.toString()}`);
     }
     
     data.timestamp = new Date().toISOString();
@@ -166,47 +188,44 @@ function getSheetDataForWebhook() {
     return data;
   } catch (error) {
     Logger.log(`❌ Error fetching sheet data: ${error.toString()}`);
-    return { timestamp: new Date().toISOString(), error: error.toString() };
+    return { error: error.toString() };
   }
 }
 
 // ============================================
-// FUNCTION 6: Check Configuration
+// TEST FUNCTIONS
 // ============================================
-function checkConfig() {
-  Logger.log('🔍 Configuration Check:');
-  Logger.log(`   Spreadsheet ID: ${SPREADSHEET_ID}`);
-  Logger.log(`   Webhook URL: ${WEBHOOK_URL}`);
-  Logger.log(`   Monitored Sheets: ${MONITORED_SHEETS.join(', ')}`);
-  Logger.log(`   ✅ Webhook URL configured`);
-  
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const allSheets = ss.getSheets().map(s => s.getName());
-  Logger.log(`   Available sheets: ${allSheets.join(', ')}`);
-}
-
-// ============================================
-// FUNCTION 7: Manual Trigger
-// ============================================
-function manualTriggerAll() {
-  Logger.log('🚀 Manual trigger - fetching all sheet data...');
+function testWebhook() {
+  Logger.log('🧪 Testing webhook...');
   const data = getSheetDataForWebhook();
-  Logger.log('📊 Data retrieved:');
-  Logger.log(JSON.stringify(data, null, 2));
+  Logger.log(`   Found data for ${Object.keys(data).length} sheets`);
   
-  Logger.log('Sending to webhook...');
-  triggerWebhook();
+  const payload = {
+    timestamp: new Date().toISOString(),
+    spreadsheetId: SPREADSHEET_ID,
+    event: 'test',
+    sheets: MONITORED_SHEETS,
+    data: data
+  };
+  
+  try {
+    const options = {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+    
+    const response = UrlFetchApp.fetch(WEBHOOK_URL, options);
+    Logger.log(`✅ Test webhook response: ${response.getResponseCode()}`);
+  } catch (error) {
+    Logger.log(`❌ Test error: ${error.toString()}`);
+  }
 }
 
-// ============================================
-// FUNCTION 8: Get Sheet Names
-// ============================================
-function getSheetNames() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheets = ss.getSheets().map(s => s.getName());
-  Logger.log('Available sheets:');
-  sheets.forEach((name, index) => {
-    Logger.log(`  ${index + 1}. ${name}`);
-  });
-  return sheets;
+function checkConfig() {
+  Logger.log('🔍 Configuration:');
+  Logger.log(`   Spreadsheet: ${SPREADSHEET_ID}`);
+  Logger.log(`   Webhook URL: ${WEBHOOK_URL}`);
+  Logger.log(`   Monitored sheets: ${MONITORED_SHEETS.join(', ')}`);
 }
