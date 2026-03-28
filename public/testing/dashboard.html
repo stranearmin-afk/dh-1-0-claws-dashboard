@@ -34,8 +34,8 @@
 <body>
   <div class="container">
     <header>
-      <h1>🎯📊 Agent Command Center v1.0.6 (Webhook Sync)</h1>
-      <p class="subtitle">Real-time agent and cron job monitoring from Google Sheets via webhook</p>
+      <h1>🎯📊 Agent Command Center v1.0.6 (Real-time Google Sheets)</h1>
+      <p class="subtitle">Live agent and cron job monitoring from Google Sheets webhook</p>
     </header>
     <main id="main"></main>
   </div>
@@ -62,27 +62,59 @@
         const response = await fetch(WEBHOOK_URL);
         const result = await response.json();
         
+        console.log('[WEBHOOK] Response:', result);
+        
         if (result.success && result.data) {
-          console.log('[WEBHOOK] Got data:', result);
-          if (result.data.agents) {
+          console.log('[WEBHOOK] Got real data from Google Sheets');
+          
+          // Parse agents from webhook
+          if (result.data.agents && Array.isArray(result.data.agents)) {
             agents = result.data.agents.slice(1).map(row => {
-              const vals = (row.values || []).map(v => v.formattedValue || '');
-              return { id: vals[0], name: vals[1], icon: vals[2], version: vals[3], status: vals[4], nextSchedule: vals[5], lastRun: vals[6], description: vals[7] };
-            }).filter(a => a.name);
+              if (!row || !row.values) return null;
+              const vals = row.values.map(v => v.formattedValue || '');
+              return { 
+                id: vals[0], 
+                name: vals[1], 
+                icon: vals[2], 
+                version: vals[3], 
+                status: vals[4], 
+                nextSchedule: vals[5], 
+                lastRun: vals[6], 
+                description: vals[7] 
+              };
+            }).filter(a => a && a.name);
+            console.log('[WEBHOOK] Parsed agents:', agents);
           }
-          if (result.data.jobs) {
+          
+          // Parse jobs from webhook
+          if (result.data.jobs && Array.isArray(result.data.jobs)) {
             cronJobs = result.data.jobs.slice(1).map(row => {
-              const vals = (row.values || []).map(v => v.formattedValue || '');
-              return { id: vals[0], name: vals[1], icon: vals[2], schedule: vals[3], nextRun: vals[4], lastRun: vals[5], duration: vals[6], status: vals[7] };
-            }).filter(j => j.name);
+              if (!row || !row.values) return null;
+              const vals = row.values.map(v => v.formattedValue || '');
+              return { 
+                id: vals[0], 
+                name: vals[1], 
+                icon: vals[2], 
+                schedule: vals[3], 
+                nextRun: vals[4], 
+                lastRun: vals[5], 
+                duration: vals[6], 
+                status: vals[7] 
+              };
+            }).filter(j => j && j.name);
+            console.log('[WEBHOOK] Parsed jobs:', cronJobs);
           }
+          
           lastUpdated = new Date().toLocaleTimeString();
           showDashboard();
           return;
         }
       } catch (err) {
-        console.log('[WEBHOOK] Error:', err.message);
+        console.error('[WEBHOOK] Error:', err.message);
       }
+      
+      // Fallback to mock data
+      console.log('[FALLBACK] Using mock data');
       agents = getMockAgents();
       cronJobs = getMockCronJobs();
       showDashboard();
