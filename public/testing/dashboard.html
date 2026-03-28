@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Command Center v1.0.9</title>
+  <title>Agent Command Center v1.0.10</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,6 +12,13 @@
     header { text-align: center; margin-bottom: 30px; }
     h1 { color: #2196f3; font-size: 2.5em; margin-bottom: 10px; }
     .subtitle { color: #90caf9; font-size: 1.1em; }
+    .header-controls { display: flex; gap: 15px; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .refresh-btn { padding: 8px 16px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+    .refresh-btn:hover { background: #1976d2; opacity: 0.9; }
+    .refresh-btn:active { transform: scale(0.95); }
+    .refresh-btn.loading { opacity: 0.7; pointer-events: none; }
+    .refresh-btn.loading span { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .tabs { display: flex; gap: 10px; margin: 30px 0; border-bottom: 2px solid #333; }
     .tab-btn { padding: 10px 20px; background: none; border: none; color: #90caf9; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; transition: all 0.3s; }
     .tab-btn.active { color: #2196f3; border-bottom-color: #2196f3; }
@@ -33,31 +40,65 @@
     .data-status { padding: 10px; border-radius: 4px; margin-bottom: 10px; background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196f3; color: #90caf9; }
     .data-status.warning { background: rgba(255, 193, 7, 0.1); border-left-color: #ffc107; color: #ffc107; }
     .data-status.success { background: rgba(76, 175, 80, 0.1); border-left-color: #4caf50; color: #4caf50; }
+    .refresh-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.9em; color: #666; }
+    .refresh-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🎯📊 Agent Command Center v1.0.9</h1>
+      <h1>🎯📊 Agent Command Center v1.0.10</h1>
       <p class="subtitle">Real-time agent and cron job monitoring (live Google Sheets data)</p>
     </header>
+    
+    <div class="header-controls">
+      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
+        <span>🔄</span>
+        <span id="refreshLabel">Refresh Now</span>
+      </button>
+      <div class="refresh-indicator">
+        <div class="refresh-dot"></div>
+        <span>Auto-refresh: <strong>2 seconds</strong></span>
+      </div>
+    </div>
+    
     <main id="main"></main>
   </div>
   <script>
     const WEBHOOK_URL = '/api/webhook';
-    const APP_VERSION = 'v1.0.9';
+    const APP_VERSION = 'v1.0.10';
+    const AUTO_REFRESH_INTERVAL = 2000; // 2 seconds
     
     let isLoggedIn = false;
     let agents = [];
     let cronJobs = [];
     let activeTab = localStorage.getItem('dashboardTab') || 'agents';
     let lastUpdated = 'Never';
-    let dataSource = 'mock'; // 'live' or 'mock'
+    let dataSource = 'mock';
+    let isRefreshing = false;
 
     function switchTab(tab) {
       activeTab = tab;
       localStorage.setItem('dashboardTab', tab);
       showDashboard();
+    }
+
+    async function manualRefresh() {
+      if (isRefreshing) return;
+      
+      const btn = document.getElementById('refreshBtn');
+      const label = document.getElementById('refreshLabel');
+      
+      isRefreshing = true;
+      btn.classList.add('loading');
+      label.textContent = 'Refreshing...';
+      
+      await fetchDataFromWebhook();
+      
+      isRefreshing = false;
+      btn.classList.remove('loading');
+      label.textContent = 'Refresh Now';
     }
 
     async function fetchDataFromWebhook() {
@@ -82,7 +123,6 @@
         if (result.success && result.data) {
           console.log('[WEBHOOK] Got live data from webhook');
           
-          // Check if we have actual data
           const hasAgents = result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1;
           const hasJobs = result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1;
           
@@ -94,7 +134,6 @@
           } else {
             dataSource = 'live';
             
-            // Parse agents (skip header row)
             if (result.data.agents && Array.isArray(result.data.agents) && result.data.agents.length > 1) {
               agents = result.data.agents.slice(1).map(row => {
                 if (!row || !Array.isArray(row) || row.length < 2) return null;
@@ -112,7 +151,6 @@
               console.log('[WEBHOOK] Parsed', agents.length, 'agents');
             }
             
-            // Parse jobs (skip header row)
             if (result.data.jobs && Array.isArray(result.data.jobs) && result.data.jobs.length > 1) {
               cronJobs = result.data.jobs.slice(1).map(row => {
                 if (!row || !Array.isArray(row) || row.length < 2) return null;
@@ -139,7 +177,6 @@
         console.error('[WEBHOOK] Fetch error:', err.message);
       }
       
-      // Fallback
       console.log('[FALLBACK] Using mock data');
       dataSource = 'mock';
       agents = getMockAgents();
@@ -152,14 +189,12 @@
         { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'active', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-28T08:00:00Z', description: 'Personal performance coach' },
         { id: '2', name: 'Sergeant First Class', icon: '🎖️', version: 'v2.1', status: 'active', nextSchedule: '2026-03-31T10:00:00Z', lastRun: '2026-03-27T10:00:00Z', description: 'Executive analytics' },
         { id: '3', name: 'Cami Agent (Weekly)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-29T18:00:00Z', lastRun: '2026-03-22T18:00:00Z', description: 'Calendar briefing' },
-        { id: '4', name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', status: 'active', nextSchedule: '2026-03-29T18:00:00Z', lastRun: '2026-03-28T18:00:00Z', description: 'Daily monitoring' },
       ];
     }
 
     function getMockCronJobs() {
       return [
         { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily (Mon-Sat) 18:00', nextRun: '2026-03-29T13:00:00Z', lastRun: '2026-03-28T12:00:00Z', duration: '19.2s', status: 'success' },
-        { id: '2', name: 'Research Scout Hunt #1', icon: '🔍', schedule: 'Daily 08:00', nextRun: '2026-03-29T13:00:00Z', lastRun: '2026-03-28T12:00:00Z', duration: '27.7s', status: 'success' },
       ];
     }
 
@@ -193,10 +228,10 @@
       document.getElementById('main').innerHTML = `<div class="login-form" style="max-width: 300px; margin: 50px auto; padding: 30px; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 8px;"><h2 style="color: #2196f3; text-align: center; margin-bottom: 20px;">Dashboard Login</h2><form onsubmit="handleLogin(event)"><input type="password" id="passwordInput" placeholder="Enter password" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: #e0e0e0;"><button type="submit" style="width: 100%; padding: 10px; background: #2196f3; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: 600;">Log In</button></form><div id="loginError" class="error" style="display: none; color: #f44336; margin-top: 10px; text-align: center;"></div></div>`;
     }
 
-    // Refresh data every 2 seconds if logged in
+    // Auto-refresh every 2 seconds
     setInterval(() => {
-      if (isLoggedIn) fetchDataFromWebhook();
-    }, 2000);
+      if (isLoggedIn && !isRefreshing) fetchDataFromWebhook();
+    }, AUTO_REFRESH_INTERVAL);
 
     function handleLogin(e) {
       e.preventDefault();
