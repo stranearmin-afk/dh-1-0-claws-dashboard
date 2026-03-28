@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 // This endpoint is called by the dashboard refresh button
 // It should trigger the Google Apps Script sendAllDataNow() function
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwo9lvQlm7cbi4HYU4ZKdJrDCMHhVuMs1tCA3cX6TgWOLyQ6UwfTuuVA3FVF0UbvgVm9A/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznwd01Ah-O0cwlB1yiKH_h_lshqH8zlju-tpQVmGI0-eSuU7ZjpxtdrMxRaX5rcCuooQ/exec';
 
 export async function POST(request: Request) {
   try {
