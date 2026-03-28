@@ -1,50 +1,56 @@
-// app/api/dashboard-trigger/route.ts
-// Calls Google Apps Script sendAllDataNow() function
-// Triggered on dashboard login and refresh button
+import { NextResponse } from 'next/server';
 
-import { NextRequest, NextResponse } from "next/server";
+// This endpoint is called by the dashboard refresh button
+// It should trigger the Google Apps Script sendAllDataNow() function
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyBJ7e-7ZsPXd7hELRqugsrqbtqByo_8VUqnxJpaL9B5IDJ5YuUctURfE_Vv5GEZwQ-6w/exec";
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwo9lvQlm7cbi4HYU4ZKdJrDCMHhVuMs1tCA3cX6TgWOLyQ6UwfTuuVA3FVF0UbvgVm9A/exec';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    console.log("[TRIGGER] Calling Google Apps Script sendAllDataNow()");
-
-    // Call the Apps Script function
-    const response = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
+    console.log('🚀 Dashboard trigger requested');
+    
+    // Call the Google Apps Script deployment
+    const scriptResponse = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        action: 'sendAllDataNow',
+        timestamp: new Date().toISOString()
+      }),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
 
-    const responseCode = response.status;
-    console.log(`[TRIGGER] Apps Script returned: ${responseCode}`);
-
-    return NextResponse.json(
-      {
-        success: responseCode === 200,
-        message: `Apps Script trigger executed with code ${responseCode}`,
-        timestamp: new Date().toISOString(),
-        triggered_at: new Date().toISOString(),
-      },
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, max-age=0",
-        },
-      }
-    );
+    const scriptResult = await scriptResponse.text();
+    
+    console.log('✅ Google Apps Script triggered');
+    console.log('   Status:', scriptResponse.status);
+    console.log('   Response:', scriptResult.substring(0, 200));
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Trigger sent to Google Apps Script',
+      apps_script_status: scriptResponse.status,
+      timestamp: new Date().toISOString(),
+      hint: 'Data should arrive via webhook within 2-3 seconds'
+    }, { status: 200 });
   } catch (error) {
-    console.error("[TRIGGER] Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
+    console.error('❌ Trigger error:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
+}
+
+// GET endpoint for testing
+export async function GET() {
+  return NextResponse.json({
+    status: 'Dashboard trigger endpoint active',
+    usage: 'POST /api/dashboard-trigger to trigger Google Apps Script',
+    script_url: GOOGLE_APPS_SCRIPT_URL,
+    timestamp: new Date().toISOString()
+  });
 }

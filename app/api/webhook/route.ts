@@ -1,116 +1,49 @@
-// app/api/webhook/route.ts
-// Webhook endpoint to receive Google Apps Script updates
-// Stores data in memory and returns it on GET
+import { NextResponse } from 'next/server';
 
-import { NextRequest, NextResponse } from "next/server";
+// This endpoint receives webhook calls from Google Apps Script
+// It stores the incoming data so the dashboard can fetch it
 
-// In-memory cache for webhook data (persists during serverless function lifetime)
-let cachedWebhookData: any = null;
-let lastUpdateTime: string = new Date().toISOString();
+let lastWebhookData: any = null;
+let lastWebhookTime: string = '';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
+    const body = await request.json();
     
-    console.log("[WEBHOOK] Received update from Google Apps Script:", {
-      timestamp: body.timestamp,
-      sheets: body.sheets,
-      event: body.event,
-      dataKeys: body.data ? Object.keys(body.data) : [],
-    });
+    // Log the incoming webhook
+    console.log('✅ Webhook received from Google Apps Script');
+    console.log('   Timestamp:', body.timestamp);
+    console.log('   Event:', body.event);
+    console.log('   Sheets:', body.sheets?.join(', '));
     
-    // Store the complete payload in memory
-    cachedWebhookData = {
+    // Store the data
+    lastWebhookData = body.data;
+    lastWebhookTime = new Date().toISOString();
+    
+    return NextResponse.json({
       success: true,
-      timestamp: body.timestamp || new Date().toISOString(),
-      event: body.event || 'sheet_updated',
-      sheets: body.sheets || [],
-      data: body.data || {},
-      receivedAt: new Date().toISOString(),
-    };
-    
-    lastUpdateTime = cachedWebhookData.timestamp;
-    
-    console.log("[WEBHOOK] Data cached in memory:", {
-      agents: Array.isArray(cachedWebhookData.data.agents) ? cachedWebhookData.data.agents.length : 0,
-      jobs: Array.isArray(cachedWebhookData.data.jobs) ? cachedWebhookData.data.jobs.length : 0,
-      calendars: Array.isArray(cachedWebhookData.data.calendars) ? cachedWebhookData.data.calendars.length : 0,
-    });
-    
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Webhook received successfully",
-        timestamp: cachedWebhookData.timestamp,
-        sheets: cachedWebhookData.sheets,
-        dataReceived: {
-          agents: Array.isArray(cachedWebhookData.data.agents) ? cachedWebhookData.data.agents.length : 0,
-          jobs: Array.isArray(cachedWebhookData.data.jobs) ? cachedWebhookData.data.jobs.length : 0,
-          calendars: Array.isArray(cachedWebhookData.data.calendars) ? cachedWebhookData.data.calendars.length : 0,
-        },
-      },
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, max-age=0",
-        },
+      message: 'Webhook received',
+      timestamp: lastWebhookTime,
+      data_received: {
+        agents: body.data?.agents?.length || 0,
+        jobs: body.data?.jobs?.length || 0,
+        calendars: body.data?.calendars?.length || 0
       }
-    );
+    }, { status: 200 });
   } catch (error) {
-    console.error("[WEBHOOK] POST Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    console.error('❌ Webhook error:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 400 });
   }
 }
 
-// GET endpoint to fetch latest cached data
-export async function GET(req: NextRequest) {
-  try {
-    if (!cachedWebhookData) {
-      console.log("[WEBHOOK] No cached data available yet");
-      return NextResponse.json(
-        {
-          success: true,
-          message: "Webhook endpoint is active but no data received yet",
-          data: null,
-          timestamp: new Date().toISOString(),
-        },
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, max-age=0",
-          },
-        }
-      );
-    }
-    
-    console.log("[WEBHOOK] Returning cached data from GET request");
-    
-    return NextResponse.json(
-      cachedWebhookData,
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, max-age=0",
-        },
-      }
-    );
-  } catch (error) {
-    console.error("[WEBHOOK] GET Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
-  }
+// GET endpoint to retrieve the last webhook data
+export async function GET() {
+  return NextResponse.json({
+    last_webhook_time: lastWebhookTime,
+    data: lastWebhookData,
+    status: lastWebhookData ? 'Data available' : 'No data received yet'
+  });
 }
