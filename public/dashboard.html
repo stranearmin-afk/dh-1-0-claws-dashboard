@@ -3,225 +3,378 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Dashboard v1.0.16</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🤖</text></svg>">
+  <title>Agent Command Center - v1.1.0</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #e0e0e0; padding: 20px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 30px; }
-    h1 { color: #2196f3; font-size: 2.5em; margin-bottom: 10px; }
-    .subtitle { color: #90caf9; font-size: 1.1em; margin-bottom: 20px; }
-    .refresh-btn { padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin: 20px 0; }
-    .refresh-btn:hover { background: #1976d2; }
-    .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .status { padding: 15px; border-radius: 4px; margin-bottom: 20px; text-align: center; font-weight: 600; }
-    .status.success { background: rgba(76, 175, 80, 0.1); color: #4caf50; border: 1px solid #4caf50; }
-    .status.error { background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid #f44336; }
-    .status.info { background: rgba(33, 150, 243, 0.1); color: #2196f3; border: 1px solid #2196f3; }
-    .status.warning { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid #ffc107; }
-    table { width: 100%; border-collapse: collapse; background: rgba(20, 20, 30, 0.8); border: 1px solid #333; border-radius: 4px; margin: 20px 0; }
-    th { padding: 12px; text-align: left; color: #2196f3; font-weight: 600; border-bottom: 2px solid #333; background: rgba(33, 150, 243, 0.1); }
-    td { padding: 10px 12px; border-bottom: 1px solid #333; }
-    tr:hover { background: rgba(33, 150, 243, 0.05); }
-    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
-    .badge-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
-    .badge-idle { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
-    .login { max-width: 300px; margin: 100px auto; padding: 40px; background: rgba(20, 20, 30, 0.9); border: 1px solid #333; border-radius: 8px; text-align: center; }
-    .login h2 { color: #2196f3; margin-bottom: 20px; }
-    .login input { width: 100%; padding: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; border-radius: 4px; color: white; }
-    .login button { width: 100%; padding: 10px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
-    .login button:hover { background: #1976d2; }
-    .info-box { padding: 15px; background: rgba(33, 150, 243, 0.1); border: 1px solid #2196f3; border-radius: 4px; margin-bottom: 20px; color: #90caf9; }
-    .info-box strong { color: #2196f3; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0a0a; color: #d1d5db; padding: 20px; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 20px; border: 1px solid #1f2937; border-radius: 8px; background: rgba(20, 20, 25, 0.5); }
+    h1 { color: #60a5fa; font-size: 2em; margin-bottom: 5px; }
+    .subtitle { color: #9ca3af; font-size: 0.9em; }
+    .header-buttons { display: flex; gap: 10px; }
+    button { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+    .btn-refresh { background: #3b82f6; color: white; }
+    .btn-refresh:hover { background: #2563eb; }
+    .btn-logout { background: #ef4444; color: white; }
+    .btn-logout:hover { background: #dc2626; }
+    .tabs { display: flex; gap: 10px; margin: 20px 0; border-bottom: 2px solid #1f2937; }
+    .tab-btn { padding: 10px 20px; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1em; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    table { width: 100%; border-collapse: collapse; background: rgba(20, 20, 25, 0.7); border: 1px solid #1f2937; border-radius: 4px; margin: 20px 0; }
+    thead { background: rgba(96, 165, 250, 0.1); }
+    th { padding: 12px; text-align: left; color: #60a5fa; font-weight: 600; border-bottom: 1px solid #1f2937; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1f2937; }
+    tr:hover { background: rgba(96, 165, 250, 0.05); }
+    .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
+    .status.running { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+    .status.idle { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+    .status.success { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+    .status.error { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+    .status.scheduled { background: rgba(33, 150, 243, 0.2); color: #2196f3; }
+    #login { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.9); z-index: 1000; }
+    #login.hidden { display: none; }
+    .login-box { background: rgba(20, 20, 25, 0.9); border: 1px solid #1f2937; border-radius: 8px; padding: 30px; width: 100%; max-width: 400px; }
+    .login-box h2 { color: #60a5fa; margin-bottom: 20px; text-align: center; }
+    .login-box input { width: 100%; padding: 10px; margin: 10px 0; background: rgba(0, 0, 0, 0.5); border: 1px solid #374151; border-radius: 4px; color: #d1d5db; }
+    .login-box button { width: 100%; padding: 10px; margin: 10px 0; }
+    #loginError { color: #f44336; margin-top: 10px; display: none; text-align: center; }
+    .refresh-status { color: #60a5fa; font-size: 0.9em; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>📊 Dashboard v1.0.16</h1>
-      <p class="subtitle">Google Sheets Real-Time Data</p>
-    </header>
-    
-    <div id="loginContainer" class="login" style="display: none;">
-      <h2>Login</h2>
+  <div id="login" class="login-box-container">
+    <div class="login-box">
+      <h2>🔐 Dashboard Login</h2>
       <form onsubmit="handleLogin(event)">
-        <input type="password" id="passwordInput" placeholder="Password" required>
-        <button type="submit">Sign In</button>
+        <input type="password" id="passwordInput" placeholder="Enter password" required>
+        <button type="submit" class="btn-refresh">Access Dashboard</button>
       </form>
-      <div id="loginError" style="color: #f44336; margin-top: 10px; display: none;"></div>
+      <div id="loginError"></div>
     </div>
-    
-    <div id="dashboardContainer" style="display: none;">
-      <div class="info-box">
-        <strong>📌 How it works:</strong><br>
-        1. Edit a cell in the Google Sheet → data is pushed automatically<br>
-        2. Click <strong>Refresh Data</strong> to fetch the latest data here
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div class="container">
+      <header>
+        <div>
+          <h1>🤖 Agent Command Center</h1>
+          <p class="subtitle">Real-time monitoring • v1.1.0 PRODUCTION</p>
+        </div>
+        <div class="header-buttons">
+          <button class="btn-refresh" id="refreshBtn">🔄 Refresh</button>
+          <button class="btn-logout" onclick="handleLogout()">🚪 Logout</button>
+        </div>
+      </header>
+      <div class="refresh-status" id="refreshStatus">Fetching data...</div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="agentsTabBtn" onclick="switchTab('agents', event)">⚡ Agents</button>
+        <button class="tab-btn" id="cronsTabBtn" onclick="switchTab('crons', event)">🕐 Jobs</button>
+        <button class="tab-btn" id="calendarsTabBtn" onclick="switchTab('calendars', event)">📅 Calendars</button>
       </div>
-      
-      <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
-      <div id="status"></div>
-      <div id="content"></div>
+
+      <div id="agents-tab" class="tab-content active">
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Next Run</th>
+              <th>Last Run</th>
+            </tr>
+          </thead>
+          <tbody id="agents-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="crons-tab" class="tab-content">
+        <table>
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>Schedule</th>
+              <th>Next Run</th>
+              <th>Last Run</th>
+              <th>Duration</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="crons-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="calendars-tab" class="tab-content">
+        <table>
+          <thead>
+            <tr>
+              <th>Calendar</th>
+              <th>Description</th>
+              <th>Access</th>
+            </tr>
+          </thead>
+          <tbody id="calendars-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
   <script>
-    const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1d6Gcs88kOPqbOqyNtBLVrStWbDiLOjXc_0TcYI5qsm7xE4wUugr8Jl0TvN7bqTkeSw/exec';
-    const SHEETS_API_URL = '/api/sheets';
-    
     let isLoggedIn = false;
-    let lastData = null;
-    
-    function showStatus(message, type) {
-      const statusEl = document.getElementById('status');
-      statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+    let agents = [];
+    let cronJobs = [];
+    let calendars = [];
+    let currentTab = 'agents';
+
+    function formatDate(isoStr) {
+      if (!isoStr) return 'N/A';
+      const d = new Date(isoStr);
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+      const h = String(d.getHours()).padStart(2,'0'), min = String(d.getMinutes()).padStart(2,'0');
+      return `${day}.${m}.${y} ${h}:${min}`;
     }
-    
-    async function refreshData() {
-      const btn = event.target;
-      btn.disabled = true;
-      btn.textContent = '🔄 Loading...';
-      
-      try {
-        showStatus('⏳ Step 1: Calling Google Apps Script...', 'info');
-        console.log('[REFRESH] Step 1: Calling Google Apps Script doPost...');
-        
-        // Call the Google Apps Script web app (this triggers doPost → sendAllDataNow)
-        const scriptResponse = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          mode: 'no-cors'  // Important: Apps Script requires no-cors
-        });
-        
-        showStatus('⏳ Step 2: Waiting for data to be posted...', 'info');
-        console.log('[REFRESH] Step 2: Waiting for Google Apps Script to POST data...');
-        
-        // Wait for the data to be posted (2 seconds should be enough)
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        // Step 3: Fetch the data from the sheets API
-        showStatus('⏳ Step 3: Fetching data from /api/sheets...', 'info');
-        console.log('[REFRESH] Step 3: Fetching from /api/sheets...');
-        
-        const sheetsResponse = await fetch(SHEETS_API_URL);
-        
-        if (!sheetsResponse.ok) {
-          throw new Error(`HTTP ${sheetsResponse.status}`);
-        }
-        
-        const data = await sheetsResponse.json();
-        console.log('[REFRESH] Data received:', data);
-        
-        if (data.success && data.data) {
-          lastData = data;
-          showStatus('✅ Data refreshed successfully!', 'success');
-          displayData(data);
-        } else {
-          showStatus('⚠️ No data available. Edit a cell in Google Sheet first to push data.', 'warning');
-          displayEmptyState();
-        }
-      } catch (error) {
-        console.error('[REFRESH] Error:', error);
-        showStatus(`❌ Error: ${error.message}`, 'error');
-        displayEmptyState();
-      } finally {
-        btn.disabled = false;
-        btn.textContent = '🔄 Refresh Data';
-      }
-    }
-    
-    function displayEmptyState() {
-      const content = document.getElementById('content');
-      content.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">📌 No data yet. Edit a cell in your Google Sheet to push data, then click Refresh.</p>';
-    }
-    
-    function displayData(data) {
-      const content = document.getElementById('content');
-      const timestamp = new Date(data.timestamp).toLocaleString('en-US', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        timeZone: 'Europe/Berlin'
-      });
-      
-      const agents = data.data.agents || [];
-      const jobs = data.data.jobs || [];
-      
-      let html = `<p style="color: #999; margin-bottom: 20px; font-size: 0.9em;">📅 Last updated: ${timestamp}</p>`;
-      
-      if (agents.length > 1) {
-        html += '<h2 style="margin-top: 30px; color: #2196f3;">⚡ Agents</h2>';
-        html += '<table><thead><tr><th>Name</th><th>Version</th><th>Status</th><th>Last Run</th></tr></thead><tbody>';
-        for (let i = 1; i < agents.length; i++) {
-          const row = agents[i];
-          const statusClass = row[4]?.toLowerCase().includes('active') ? 'badge-active' : 'badge-idle';
-          html += `<tr>
-            <td>${row[2] || ''} ${row[1] || ''}</td>
-            <td>${row[3] || 'N/A'}</td>
-            <td><span class="badge ${statusClass}">${row[4] || 'unknown'}</span></td>
-            <td>${row[6] || 'N/A'}</td>
-          </tr>`;
-        }
-        html += '</tbody></table>';
-      }
-      
-      if (jobs.length > 1) {
-        html += '<h2 style="margin-top: 30px; color: #2196f3;">⏰ Cron Jobs</h2>';
-        html += '<table><thead><tr><th>Name</th><th>Schedule</th><th>Next Run</th><th>Status</th></tr></thead><tbody>';
-        for (let i = 1; i < jobs.length; i++) {
-          const row = jobs[i];
-          html += `<tr>
-            <td>${row[2] || ''} ${row[1] || ''}</td>
-            <td>${row[3] || 'N/A'}</td>
-            <td>${row[4] || 'N/A'}</td>
-            <td><span class="badge">${row[7] || 'unknown'}</span></td>
-          </tr>`;
-        }
-        html += '</tbody></table>';
-      }
-      
-      if (agents.length <= 1 && jobs.length <= 1) {
-        html += '<p style="color: #666; text-align: center; padding: 40px;">No data in the sheets yet.</p>';
-      }
-      
-      content.innerHTML = html;
-    }
-    
+
     function handleLogin(e) {
       e.preventDefault();
-      const password = document.getElementById('passwordInput').value;
-      
-      if (password === 'admin') {
+      const pwd = document.getElementById('passwordInput').value;
+      if (pwd === 'admin') {
         isLoggedIn = true;
         localStorage.setItem('dashboardLoggedIn', 'true');
-        document.getElementById('loginContainer').style.display = 'none';
-        document.getElementById('dashboardContainer').style.display = 'block';
-        
-        // Show empty state - DO NOT auto-refresh
-        displayEmptyState();
-        showStatus('📌 Click "Refresh Data" to load the latest data from Google Sheets', 'info');
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        fetchData();
       } else {
-        const errorEl = document.getElementById('loginError');
-        errorEl.textContent = '❌ Invalid password';
-        errorEl.style.display = 'block';
+        document.getElementById('loginError').textContent = '❌ Invalid password';
+        document.getElementById('loginError').style.display = 'block';
       }
     }
-    
-    // Check if already logged in
+
+    function handleLogout() {
+      isLoggedIn = false;
+      localStorage.removeItem('dashboardLoggedIn');
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('login').style.display = 'flex';
+      document.getElementById('passwordInput').value = '';
+    }
+
+    function switchTab(tab, event) {
+      console.log('[TAB] Switching to:', tab);
+      currentTab = tab;
+      
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(tab + '-tab').classList.add('active');
+      
+      if (event && event.target) {
+        event.target.classList.add('active');
+      } else {
+        if (tab === 'agents') document.getElementById('agentsTabBtn').classList.add('active');
+        else if (tab === 'crons') document.getElementById('cronsTabBtn').classList.add('active');
+        else if (tab === 'calendars') document.getElementById('calendarsTabBtn').classList.add('active');
+      }
+      
+      console.log('[TAB] ✓ Switched to', tab);
+    }
+
+    async function fetchData() {
+      console.log('[REFRESH] Button clicked - fetching data');
+      const statusEl = document.getElementById('refreshStatus');
+      statusEl.style.display = 'block';
+      statusEl.textContent = '⏳ Fetching data...';
+      
+      try {
+        console.log('[FETCH] Getting data from /api/sheets');
+        const res = await fetch('/api/sheets');
+        console.log('[FETCH] Response status:', res.status);
+        
+        if (!res.ok) {
+          throw new Error('API returned ' + res.status);
+        }
+        
+        const data = await res.json();
+        console.log('[FETCH] Raw response:', data);
+        
+        if (data.success && data.data) {
+          console.log('[FETCH] Data structure:', Object.keys(data.data));
+          
+          const agentsList = data.data.agents || [];
+          const jobsList = data.data.jobs || [];
+          const calendarsList = data.data.calendars || [];
+          
+          console.log('[FETCH] Raw data - agents:', agentsList.length, 'jobs:', jobsList.length, 'calendars:', calendarsList.length);
+          
+          agents = agentsList
+            .map((row, idx) => {
+              if (Array.isArray(row)) {
+                return {
+                  id: row[0] || '',
+                  name: row[1] || '',
+                  icon: row[2] || '📌',
+                  version: row[3] || '',
+                  status: row[4] || 'idle',
+                  nextSchedule: row[5] || '',
+                  lastRun: row[6] || ''
+                };
+              } else {
+                return {
+                  id: row.values?.[0]?.formattedValue || '',
+                  name: row.values?.[1]?.formattedValue || '',
+                  icon: row.values?.[2]?.formattedValue || '📌',
+                  version: row.values?.[3]?.formattedValue || '',
+                  status: row.values?.[4]?.formattedValue || 'idle',
+                  nextSchedule: row.values?.[5]?.formattedValue || '',
+                  lastRun: row.values?.[6]?.formattedValue || ''
+                };
+              }
+            })
+            .filter((a, idx) => {
+              if (idx === 0 && (a.name === 'Name' || a.name === 'ID')) return false;
+              return true;
+            });
+          
+          cronJobs = jobsList
+            .map((row, idx) => {
+              if (Array.isArray(row)) {
+                return {
+                  id: row[0] || '',
+                  name: row[1] || '',
+                  icon: row[2] || '📋',
+                  schedule: row[3] || '',
+                  nextRun: row[4] || '',
+                  lastRun: row[5] || '',
+                  duration: row[6] || '',
+                  status: row[7] || ''
+                };
+              } else {
+                return {
+                  id: row.values?.[0]?.formattedValue || '',
+                  name: row.values?.[1]?.formattedValue || '',
+                  icon: row.values?.[2]?.formattedValue || '📋',
+                  schedule: row.values?.[3]?.formattedValue || '',
+                  nextRun: row.values?.[4]?.formattedValue || '',
+                  lastRun: row.values?.[5]?.formattedValue || '',
+                  duration: row.values?.[6]?.formattedValue || '',
+                  status: row.values?.[7]?.formattedValue || ''
+                };
+              }
+            })
+            .filter((j, idx) => {
+              if (idx === 0 && (j.name === 'Name' || j.name === 'Icon Job Name' || j.name === 'ID')) return false;
+              return true;
+            });
+          
+          calendars = calendarsList
+            .map((row, idx) => {
+              if (Array.isArray(row)) {
+                return {
+                  id: row[0] || '',
+                  name: row[1] || '',
+                  description: row[2] || '',
+                  access: row[3] || ''
+                };
+              } else {
+                return {
+                  id: row.values?.[0]?.formattedValue || '',
+                  name: row.values?.[1]?.formattedValue || '',
+                  description: row.values?.[2]?.formattedValue || '',
+                  access: row.values?.[3]?.formattedValue || ''
+                };
+              }
+            })
+            .filter((c, idx) => {
+              if (idx === 0 && (c.name === 'Calendar' || c.name === 'Display Name' || c.name === 'ID')) return false;
+              return true;
+            });
+          
+          console.log('[FETCH] ✅ Processed - agents:', agents.length, 'jobs:', cronJobs.length, 'calendars:', calendars.length);
+          statusEl.textContent = '✅ Data refreshed: ' + agents.length + ' agents, ' + cronJobs.length + ' jobs';
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (e) {
+        console.error('[FETCH] ❌ Error:', e.message);
+        console.log('[FETCH] Using mock data');
+        statusEl.textContent = '⚠️ Using mock data (API unavailable)';
+        loadMockData();
+      }
+      
+      renderData();
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    }
+
+    function loadMockData() {
+      agents = [
+        { id: '1', name: 'Staff Sergeant Agent', icon: '⚡', version: 'v2.0', status: 'running', nextSchedule: '2026-03-31T09:00:00Z', lastRun: '2026-03-27T08:00:00Z' },
+        { id: '2', name: 'Cami Agent (Daily)', icon: '📅', version: 'v1.0', status: 'scheduled', nextSchedule: '2026-03-30T18:00:00Z', lastRun: '2026-03-29T08:00:00Z' }
+      ];
+      cronJobs = [
+        { id: '1', name: 'Cami Daily Briefing', icon: '📅', schedule: 'Daily 18:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '19.2s', status: 'success' },
+        { id: '2', name: 'Research Scout', icon: '🔍', schedule: 'Daily 08:00', nextRun: '2026-03-30T13:24:50Z', lastRun: '2026-03-29T12:24:50Z', duration: '27.7s', status: 'success' }
+      ];
+      calendars = [
+        { id: '1', name: 'FLCAL - Allgemein', description: 'General scheduling', access: 'Writer' },
+        { id: '2', name: 'dk.heinz@gmail.com', description: 'Personal', access: 'Writer' }
+      ];
+    }
+
+    function renderData() {
+      document.getElementById('agents-tbody').innerHTML = agents.map(a => `
+        <tr>
+          <td>${a.icon} ${a.name}</td>
+          <td>${a.version}</td>
+          <td><span class="status ${a.status}">${a.status}</span></td>
+          <td>${formatDate(a.nextSchedule)}</td>
+          <td>${formatDate(a.lastRun)}</td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('crons-tbody').innerHTML = cronJobs.map(j => `
+        <tr>
+          <td>${j.icon} ${j.name}</td>
+          <td>${j.schedule}</td>
+          <td>${formatDate(j.nextRun)}</td>
+          <td>${formatDate(j.lastRun)}</td>
+          <td>${j.duration}</td>
+          <td><span class="status ${j.status}">${j.status}</span></td>
+        </tr>
+      `).join('');
+      
+      document.getElementById('calendars-tbody').innerHTML = calendars.map(c => `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.description}</td>
+          <td><span class="status ${c.access.toLowerCase()}">${c.access}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      console.log('[INIT] Dashboard initialized v1.1.0 PRODUCTION');
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('[REFRESH] Button click detected');
+          fetchData();
+        });
+        console.log('[INIT] ✓ Refresh button listener attached');
+      } else {
+        console.error('[INIT] ❌ Refresh button not found');
+      }
+    });
+
     if (localStorage.getItem('dashboardLoggedIn')) {
       isLoggedIn = true;
-      document.getElementById('dashboardContainer').style.display = 'block';
-      document.getElementById('loginContainer').style.display = 'none';
-      
-      // Show empty state - DO NOT auto-refresh
-      displayEmptyState();
-      showStatus('📌 Click "Refresh Data" to load the latest data from Google Sheets', 'info');
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      fetchData();
     } else {
-      document.getElementById('loginContainer').style.display = 'block';
-      document.getElementById('dashboardContainer').style.display = 'none';
-      document.getElementById('passwordInput').focus();
+      document.getElementById('login').style.display = 'flex';
+      document.getElementById('dashboard').style.display = 'none';
     }
   </script>
 </body>
