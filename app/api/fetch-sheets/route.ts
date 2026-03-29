@@ -3,6 +3,7 @@
 // Called when dashboard loads or refresh button clicked
 
 import { NextRequest, NextResponse } from "next/server";
+import { executeComposioTool } from "@/lib/composio";
 
 const SPREADSHEET_ID = "1NyQHZXT-QkA7EX8LX3B4CAyWfzrRoAb9nbTMJmStGyk";
 
@@ -10,36 +11,18 @@ export async function GET(req: NextRequest) {
   try {
     console.log("[FETCH-SHEETS] Fetching live data from Google Sheets...");
 
-    // Construct the request to Composio's Google Sheets tool
-    // This will fetch data directly from your Google Sheet
-    const composioRequest = await fetch(
-      `https://api.composio.dev/v1/execute/googlesheets/GOOGLESHEETS_BATCH_GET`,
+    const composioData = await executeComposioTool(
+      "googlesheets",
+      "GOOGLESHEETS_BATCH_GET",
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.COMPOSIO_API_KEY}`,
-        },
-        body: JSON.stringify({
-          spreadsheet_id: SPREADSHEET_ID,
-          ranges: [
-            "'Agents'!A1:Z100",
-            "'Cron Jobs'!A1:Z100",
-            "'Calendars'!A1:Z100",
-          ],
-        }),
+        spreadsheet_id: SPREADSHEET_ID,
+        ranges: [
+          "'Agents'!A1:Z100",
+          "'Cron Jobs'!A1:Z100",
+          "'Calendars'!A1:Z100",
+        ],
       }
     );
-
-    if (!composioRequest.ok) {
-      console.error(
-        "[FETCH-SHEETS] Composio API error:",
-        composioRequest.status
-      );
-      throw new Error(`Composio API returned ${composioRequest.status}`);
-    }
-
-    const composioData = await composioRequest.json();
     console.log("[FETCH-SHEETS] Composio response received");
 
     // Parse the response data
