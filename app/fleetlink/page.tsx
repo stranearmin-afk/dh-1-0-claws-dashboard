@@ -168,6 +168,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function FleetlinkAnalyse() {
   const [activeTab, setActiveTab] = useState("overview");
 
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/auth/login';
+  }
+
   return (
     <div style={{ background: COLORS.bg, minHeight: "100vh", color: COLORS.text, fontFamily: "'DM Sans', -apple-system, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -176,10 +181,29 @@ export default function FleetlinkAnalyse() {
       <div style={{ padding: "32px 32px 0", maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 8 }}>
           <div style={{ width: 42, height: 42, borderRadius: 12, background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🚛</div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>FleetLink Lead-Analyse</h1>
             <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>716 Leads mit unterschriebenen Langzeitverträgen · 592 Kunden · seit 2021</p>
           </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 10,
+              border: `1px solid ${COLORS.border}`,
+              background: "transparent",
+              color: COLORS.textMuted,
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: "inherit",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = COLORS.red; e.currentTarget.style.color = COLORS.red; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.color = COLORS.textMuted; }}
+          >
+            Abmelden
+          </button>
         </div>
       </div>
 
