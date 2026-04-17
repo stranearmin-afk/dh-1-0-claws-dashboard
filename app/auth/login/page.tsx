@@ -19,7 +19,8 @@ export default function LoginPage() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
-        router.push('/dashboard');
+        const params = new URLSearchParams(window.location.search);
+        router.push(params.get('from') || '/fleetlink');
       } else {
         setError('Invalid password');
       }
@@ -53,7 +54,6 @@ export default function LoginPage() {
             </button>
           </form>
           {error && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"><p className="text-red-400 text-sm">{error}</p></div>}
-          <p className="text-xs text-gray-600 text-center mt-6">Default password: <span className="text-gray-500 mono">admin</span></p>
         </div>
       </div>
     </div>
