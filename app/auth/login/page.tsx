@@ -22,39 +22,145 @@ export default function LoginPage() {
         const params = new URLSearchParams(window.location.search);
         router.push(params.get('from') || '/fleetlink');
       } else {
-        setError('Invalid password');
+        setError('Falsches Passwort. Bitte erneut versuchen.');
       }
-    } catch (err) {
-      setError('Login failed');
+    } catch {
+      setError('Verbindungsfehler. Bitte Seite neu laden.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl mb-6 shadow-lg shadow-blue-500/20">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+    <div style={{
+      minHeight: '100vh',
+      background: '#0F1117',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      fontFamily: "'DM Sans', -apple-system, sans-serif",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+      <div style={{ width: '100%', maxWidth: 420 }}>
+
+        {/* Logo + Title */}
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 64,
+            height: 64,
+            borderRadius: 18,
+            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+            marginBottom: 20,
+            boxShadow: '0 0 40px #3B82F630',
+          }}>
+            <span style={{ fontSize: 28 }}>🚛</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Agent Command Center</h1>
-          <p className="text-gray-500">v1.0 Secure Access Required</p>
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: '#E2E8F0',
+            margin: '0 0 8px',
+            letterSpacing: '-0.02em',
+          }}>
+            FleetLink
+          </h1>
+          <p style={{ fontSize: 14, color: '#64748B', margin: 0 }}>
+            Lead-Analyse · Interner Zugang
+          </p>
         </div>
-        <div className="bg-[rgba(20,20,25,0.7)] backdrop-blur-xl border border-white/10 rounded-xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.37)]">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50" placeholder="••••••••" disabled={loading} autoFocus />
+
+        {/* Card */}
+        <div style={{
+          background: '#1A1D27',
+          borderRadius: 20,
+          border: '1px solid #2D3348',
+          padding: '36px 32px',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+        }}>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{
+                display: 'block',
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                marginBottom: 10,
+              }}>
+                Passwort
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={loading}
+                autoFocus
+                style={{
+                  width: '100%',
+                  background: '#0F1117',
+                  border: '1px solid #2D3348',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  fontSize: 16,
+                  color: '#E2E8F0',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                  fontFamily: 'inherit',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
+                onBlur={(e) => e.target.style.borderColor = '#2D3348'}
+              />
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:opacity-50 text-white font-medium py-3 rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-              {loading ? 'Checking...' : 'Access Dashboard'}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                background: loading ? '#2D3348' : 'linear-gradient(135deg, #3B82F6, #6366F1)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 12,
+                padding: '14px',
+                fontSize: 15,
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'opacity 0.2s',
+                opacity: loading ? 0.6 : 1,
+                boxShadow: loading ? 'none' : '0 4px 20px #3B82F640',
+              }}
+            >
+              {loading ? 'Wird geprüft...' : 'Zugang öffnen →'}
             </button>
           </form>
-          {error && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"><p className="text-red-400 text-sm">{error}</p></div>}
+
+          {error && (
+            <div style={{
+              marginTop: 16,
+              padding: '12px 16px',
+              background: '#EF444415',
+              border: '1px solid #EF444430',
+              borderRadius: 10,
+              fontSize: 13,
+              color: '#EF4444',
+            }}>
+              {error}
+            </div>
+          )}
         </div>
+
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#334155', marginTop: 24 }}>
+          © {new Date().getFullYear()} FleetLink · fleetlink.de
+        </p>
       </div>
     </div>
   );

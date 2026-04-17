@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'FL2026!';
 
 export async function verifyPassword(password: string): Promise<boolean> {
   try {
